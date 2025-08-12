@@ -1,0 +1,9 @@
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Game/Config/Jump")]
+public class JumpConfig : ScriptableObject
+{
+    public float jumpHeight = 4f;    // 목표 최고점(월드 유닛)
+    public float coyoteTime = 0.1f;  // 발 떼고도 허용
+    public float bufferTime = 0.1f;  // 입력 버퍼
+}
