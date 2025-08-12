@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 
 public interface IHitReceiver
 {
@@ -10,25 +11,34 @@ public class Hitbox : MonoBehaviour
     public float damage = 10f;
     public Vector2 knockback = new Vector2(6f, 2f);
 
+    // ↓ 디버그/콜백용
+    public string attackerName = "Player";
+    public bool debugLog = false;
+    public Action<Collider2D, float> OnHit;  // (맞은 콜라이더, 데미지)
+
     void OnTriggerEnter2D(Collider2D other)
     {
-        var recv = other.GetComponent<IHitReceiver>();
+        var recv = other.GetComponent<IHitReceiver>()
+            ?? other.GetComponentInParent<IHitReceiver>()
+            ?? other.GetComponentInChildren<IHitReceiver>();
+
         if (recv != null)
         {
             recv.ReceiveHit(damage, knockback, transform.position);
+
+            if (debugLog)
+                Debug.Log($"[HIT] {attackerName} -> {other.name} dmg={damage} @ {transform.position}");
+
+            OnHit?.Invoke(other, damage);
+        }
+        else
+        {
+            if (debugLog)
+            {
+                string layer = LayerMask.LayerToName(other.gameObject.layer);
+                Debug.LogWarning($"[HIT but no IHitReceiver] {attackerName} -> {other.name} (layer={layer})");
+            }
         }
     }
-}
 
-/*
- * 예시 적 컴포넌트:
- * public class DummyEnemy : MonoBehaviour, IHitReceiver
- * {
- *     public void ReceiveHit(float dmg, Vector2 kb, Vector2 p)
- *     {
- *         Debug.Log($"Hit {name} dmg={dmg}");
- *         var rb = GetComponent<Rigidbody2D>();
- *         if (rb) rb.AddForce(kb, ForceMode2D.Impulse);
- *     }
- * }
- */
+}

@@ -22,7 +22,13 @@ public class AttackAbility
 
     IEnumerator AttackRoutine()
     {
-        _busy = true; _cooling = true;
+        _busy = true;
+        _cooling = true;
+
+        int hitCount = 0;
+
+        // 공격 시작
+        Debug.Log("attack");
 
         // StartUp
         yield return new WaitForSeconds(cfg.startUp);
@@ -46,6 +52,16 @@ public class AttackAbility
         hb.damage = cfg.damage;
         hb.knockback = new Vector2(motor.FacingRight ? cfg.knockback : -cfg.knockback, 2f);
 
+        // ↓ 디버그 설정/콜백
+        hb.attackerName = root.name;
+        hb.debugLog = true;
+        hb.OnHit += (col, dmg) =>
+        {
+            hitCount++;
+            // 필요시 여기서 추가 로직 가능(히트스톱, 콤보 등)
+        };
+
+        // Active 유지
         yield return new WaitForSeconds(cfg.active);
         Object.Destroy(go);
 
@@ -53,6 +69,9 @@ public class AttackAbility
         yield return new WaitForSeconds(cfg.recovery);
 
         _busy = false;
+
+        // 공격 종료 + 이번 공격에서 총 몇 번 맞았는지
+        Debug.Log($"attack end (hits={hitCount})");
 
         // Cooldown
         yield return new WaitForSeconds(cfg.cooldown);

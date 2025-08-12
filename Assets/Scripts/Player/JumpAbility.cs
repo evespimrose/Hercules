@@ -9,12 +9,28 @@ public class JumpAbility
     float bufferTimer;
     bool jumpHeld;
 
+    // ↓ 추가: 남은 공중점프 횟수
+    int remainingAirJumps = 0;
+
     public JumpAbility(CharacterMotor2D motor, JumpConfig cfg)
-    { this.motor = motor; this.cfg = cfg; }
+    {
+        this.motor = motor;
+        this.cfg = cfg;
+        remainingAirJumps = cfg.extraAirJumps;
+    }
 
     public void UpdateTimers(float dt, bool grounded)
     {
-        coyoteTimer = grounded ? cfg.coyoteTime : Mathf.Max(0, coyoteTimer - dt);
+        if (grounded)
+        {
+            // 착지 중에는 항상 리셋
+            coyoteTimer = cfg.coyoteTime;
+            remainingAirJumps = cfg.extraAirJumps;
+        }
+        else
+        {
+            coyoteTimer = Mathf.Max(0, coyoteTimer - dt);
+        }
         bufferTimer = Mathf.Max(0, bufferTimer - dt);
     }
 
@@ -23,19 +39,36 @@ public class JumpAbility
 
     public void TryConsume()
     {
-        if (bufferTimer > 0f && coyoteTimer > 0f)
+        if (bufferTimer <= 0f) return;
+
+        // 1) 지상/코요테 점프 우선
+        if (coyoteTimer > 0f)
         {
-            float v0 = Mathf.Sqrt(2f * Mathf.Abs(motor.Gravity) * cfg.jumpHeight);
-            motor.AddVerticalVelocity(v0);
-            jumpHeld = true;
+            DoJump();
             bufferTimer = 0f;
             coyoteTimer = 0f;
+            return;
         }
+
+        // 2) 공중 점프 (남은 횟수 있을 때만)
+        if (remainingAirJumps > 0)
+        {
+            DoJump();
+            remainingAirJumps--;
+            bufferTimer = 0f;
+        }
+    }
+
+    void DoJump()
+    {
+        float v0 = Mathf.Sqrt(2f * Mathf.Abs(motor.Gravity) * cfg.jumpHeight);
+        motor.AddVerticalVelocity(v0);
+        jumpHeld = true;
     }
 
     public void Tick()
     {
-        // 점프 컷: 키를 떼었고 상승 중이면 속도 절삭
+        // 점프 컷: 키를 떼었고 상승 중이면 속도를 절삭
         if (!jumpHeld && motor.Velocity.y > 0f)
             motor.AddVerticalVelocity(motor.Velocity.y * 0.5f);
     }
