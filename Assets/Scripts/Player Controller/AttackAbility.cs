@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-public class AttackAbility
+public class AttackAbility : MonoBehaviour
 {
     readonly MonoBehaviour runner;
     readonly CharacterMotor2D motor;
@@ -27,13 +27,12 @@ public class AttackAbility
 
         int hitCount = 0;
 
-        // °ø°Ý ½ÃÀÛ
         Debug.Log("attack");
 
         // StartUp
         yield return new WaitForSeconds(cfg.startUp);
 
-        // Active: È÷Æ®¹Ú½º »ý¼º
+        // Active: ï¿½ï¿½Æ®ï¿½Ú½ï¿½ ï¿½ï¿½ï¿½ï¿½
         Vector2 off = cfg.hitboxOffset;
         if (!motor.FacingRight) off.x = -off.x;
 
@@ -52,25 +51,24 @@ public class AttackAbility
         hb.damage = cfg.damage;
         hb.knockback = new Vector2(motor.FacingRight ? cfg.knockback : -cfg.knockback, 2f);
 
-        // ¡é µð¹ö±× ¼³Á¤/ÄÝ¹é
+        // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½/ï¿½Ý¹ï¿½
         hb.attackerName = root.name;
         hb.debugLog = true;
         hb.OnHit += (col, dmg) =>
         {
             hitCount++;
-            // ÇÊ¿ä½Ã ¿©±â¼­ Ãß°¡ ·ÎÁ÷ °¡´É(È÷Æ®½ºÅé, ÄÞº¸ µî)
         };
 
-        // Active À¯Áö
+        // Active ï¿½ï¿½ï¿½ï¿½
         yield return new WaitForSeconds(cfg.active);
-        Object.Destroy(go);
+        Destroy(go);
 
         // Recovery
         yield return new WaitForSeconds(cfg.recovery);
 
         _busy = false;
 
-        // °ø°Ý Á¾·á + ÀÌ¹ø °ø°Ý¿¡¼­ ÃÑ ¸î ¹ø ¸Â¾Ò´ÂÁö
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ + ï¿½Ì¹ï¿½ ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½Â¾Ò´ï¿½ï¿½ï¿½
         Debug.Log($"attack end (hits={hitCount})");
 
         // Cooldown

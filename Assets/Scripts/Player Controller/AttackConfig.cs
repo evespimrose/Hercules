@@ -5,9 +5,9 @@ public class AttackConfig : ScriptableObject
 {
     public float damage = 10f;
 
-    public float startUp = 0.08f;   // ¹ßµ¿
-    public float active = 0.12f;    // À¯È¿
-    public float recovery = 0.16f;  // °æÁ÷
+    public float startUp = 0.08f;   // ï¿½ßµï¿½
+    public float active = 0.12f;    // ï¿½ï¿½È¿
+    public float recovery = 0.16f;  // ï¿½ï¿½ï¿½ï¿½
     public float cooldown = 0.10f;
 
     public float knockback = 6f;

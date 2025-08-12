@@ -17,13 +17,13 @@ public class PlayerController : MonoBehaviour
     DashAbility dash;
     AttackAbility attack;
 
-    float lastDownTapTime = -999f;  // S ´õºíÅÇ °¨Áö
+    float lastDownTapTime = -999f;  // S ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     bool movementLocked => (dash != null && dash.IsDashing) || (attack != null && attack.IsBusy);
 
     void Awake()
     {
         motor = GetComponent<CharacterMotor2D>();
-        input = GetComponent<IInputSource>(); // UnityInputSource ÇÔ²² ºÙÀÌ±â
+        input = GetComponent<IInputSource>(); // UnityInputSource ï¿½Ô²ï¿½ ï¿½ï¿½ï¿½Ì±ï¿½
 
         move = new MoveAbility(motor, moveCfg);
         jump = new JumpAbility(motor, jumpCfg);
@@ -33,31 +33,31 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        // Á¡ÇÁ (Space)
+        // ï¿½ï¿½ï¿½ï¿½ (Space)
         if (input.JumpDown) jump.OnJumpPressed();
         if (input.JumpUp) jump.OnJumpReleased();
 
-        // ´ë½Ã/°ø°Ý
+        // ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½
         if (input.DashDown) dash.TryStart(input.MoveX);
         if (input.AttackDown) attack.TryStart();
 
-        // S ´õºíÅÇ ¡æ µå·Ó´Ù¿î (¿ø¿þÀÌ ¹ßÆÇ À§)
+        // S ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ó´Ù¿ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½)
         if (input.DownDown)
         {
             if (Time.time - lastDownTapTime <= moveCfg.dropDoubleTapWindow)
-                motor.TryDropThrough(); // ³»ºÎ¿¡¼­ IsGrounded, ¹ßÆÇ Ã¼Å©
+                motor.TryDropThrough(); // ï¿½ï¿½ï¿½Î¿ï¿½ï¿½ï¿½ IsGrounded, ï¿½ï¿½ï¿½ï¿½ Ã¼Å©
             lastDownTapTime = Time.time;
         }
 
-        // Á¡ÇÁ Å¸ÀÌ¸Ó °»½Å
+        // ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½
         jump.UpdateTimers(Time.deltaTime, motor.IsGrounded);
     }
 
     void FixedUpdate()
     {
-        bool crouching = input.DownHeld; // S À¯Áö ¡æ ¿õÅ©¸®±â
+        bool crouching = input.DownHeld; // S ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Å©ï¿½ï¿½ï¿½ï¿½
 
-        // ÀÌµ¿/Á¡ÇÁ
+        // ï¿½Ìµï¿½/ï¿½ï¿½ï¿½ï¿½
         move.Tick(input.MoveX, movementLocked, crouching);
         jump.TryConsume();
         jump.Tick();

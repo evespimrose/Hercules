@@ -6,11 +6,11 @@ public class CharacterMotor2D : MonoBehaviour
 {
     [Header("Ground Check")]
     public LayerMask groundMask;
-    public Transform groundProbe;    // ¹ß¹Ø Ã¼Å© Æ÷ÀÎÆ®
+    public Transform groundProbe;    // ï¿½ß¹ï¿½ Ã¼Å© ï¿½ï¿½ï¿½ï¿½Æ®
     public float groundProbeRadius = 0.1f;
 
     [Header("One-Way Platform")]
-    public LayerMask oneWayMask;     // ¿ø¿þÀÌ ¹ßÆÇ ·¹ÀÌ¾î
+    public LayerMask oneWayMask;     // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¾ï¿½
 
     public bool IsGrounded { get; private set; }
     public bool FacingRight { get; private set; } = true;
@@ -54,7 +54,7 @@ public class CharacterMotor2D : MonoBehaviour
         var s = transform.localScale; s.x *= -1f; transform.localScale = s;
     }
 
-    // ¿ø¿þÀÌ ¹ßÆÇ µå·Ó´Ù¿î
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ó´Ù¿ï¿½
     public void TryDropThrough(float duration = 0.25f)
     {
         if (!IsGrounded || groundProbe == null) return;
@@ -71,7 +71,7 @@ public class CharacterMotor2D : MonoBehaviour
             foreach (var me in _myCols)
                 if (me && p) Physics2D.IgnoreCollision(me, p, true);
 
-        // Áï½Ã ÇÏ°­ ½ÃÀÛ
+        // ï¿½ï¿½ï¿½ ï¿½Ï°ï¿½ ï¿½ï¿½ï¿½ï¿½
         AddVerticalVelocity(Mathf.Min(-0.1f, _rb.velocity.y));
 
         yield return new WaitForSeconds(duration);
