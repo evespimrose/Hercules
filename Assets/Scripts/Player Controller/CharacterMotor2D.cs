@@ -1,16 +1,17 @@
 using UnityEngine;
 using System.Collections;
+using System.Diagnostics;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class CharacterMotor2D : MonoBehaviour
 {
     [Header("Ground Check")]
     public LayerMask groundMask;
-    public Transform groundProbe;    // �߹� üũ ����Ʈ
-    public float groundProbeRadius = 0.1f;
+    public Transform groundProbe;    // 발밑 체크 포인트(플레이어 '자식'이어야 함)
+    public float groundProbeRadius = 0.12f;
 
     [Header("One-Way Platform")]
-    public LayerMask oneWayMask;     // ������ ���� ���̾�
+    public LayerMask oneWayMask;     // 원웨이 발판 레이어
 
     public bool IsGrounded { get; private set; }
     public bool FacingRight { get; private set; } = true;
@@ -24,7 +25,9 @@ public class CharacterMotor2D : MonoBehaviour
     void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
-        _myCols = GetComponents<Collider2D>();
+        _myCols = GetComponentsInChildren<Collider2D>();
+        if (groundProbe == null)
+            UnityEngine.Debug.LogWarning("[CharacterMotor2D] GroundProbe가 비어 있습니다. (Player의 자식 Transform를 지정하세요)");
     }
 
     void FixedUpdate()
@@ -54,7 +57,7 @@ public class CharacterMotor2D : MonoBehaviour
         var s = transform.localScale; s.x *= -1f; transform.localScale = s;
     }
 
-    // ������ ���� ��Ӵٿ�
+    // 원웨이 발판 드롭다운
     public void TryDropThrough(float duration = 0.25f)
     {
         if (!IsGrounded || groundProbe == null) return;
@@ -71,7 +74,7 @@ public class CharacterMotor2D : MonoBehaviour
             foreach (var me in _myCols)
                 if (me && p) Physics2D.IgnoreCollision(me, p, true);
 
-        // ��� �ϰ� ����
+        // 즉시 하강 시작
         AddVerticalVelocity(Mathf.Min(-0.1f, _rb.velocity.y));
 
         yield return new WaitForSeconds(duration);

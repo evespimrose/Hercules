@@ -8,5 +8,5 @@ public interface IInputSource
 
     // S 입력 (웅크리기/드롭다운)
     bool DownHeld { get; }   // S 유지
-    bool DownDown { get; }   // S 엣지(이번 프레임에 눌림)
+    bool DownDown { get; }   // S 엣지(이번 프레임 눌림)
 }
