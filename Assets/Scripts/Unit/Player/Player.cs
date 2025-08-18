@@ -15,16 +15,24 @@ public class Player : Unit
     public override void Damage(float amount, Unit source)
     {
         base.Damage(amount, source);
-        currentHealth -= amount;
-        if (currentHealth <= 0)
-        {
-            Debug.Log($"{name} 사망!");
-        }
     }
 
     public override void Heal(float amount, Unit source)
     {
         base.Heal(amount, source);
-        currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+    }
+
+    public override void Die()
+    {
+        if (IsDead) return;
+
+        // 플레이어 전용: 입력/능력 컴포넌트 비활성화 (기본 Die 처리 전에)
+        var pc = GetComponent<PlayerController>(); if (pc) pc.enabled = false;
+        var move = GetComponent<MoveAbilityMB>(); if (move) move.enabled = false;
+        var jump = GetComponent<JumpAbilityMB>(); if (jump) jump.enabled = false;
+        var dash = GetComponent<DashAbilityMB>(); if (dash) dash.enabled = false;
+        var atk = GetComponent<AttackAbilityMB>(); if (atk) atk.enabled = false;
+
+        base.Die();
     }
 }

@@ -83,12 +83,6 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
                 var cols = GetComponentsInChildren<Collider2D>(true);
         foreach (var col in cols) if (col) col.enabled = false;
 
-        var pc = GetComponent<PlayerController>(); if (pc) pc.enabled = false;
-        var move = GetComponent<MoveAbilityMB>(); if (move) move.enabled = false;
-        var jump = GetComponent<JumpAbilityMB>(); if (jump) jump.enabled = false;
-        var dash = GetComponent<DashAbilityMB>(); if (dash) dash.enabled = false;
-        var atk = GetComponent<AttackAbilityMB>(); if (atk) atk.enabled = false;
-
         OnDied?.Invoke(this);
 
         if (destroyOnDeath) Destroy(gameObject, deathDestroyDelay);

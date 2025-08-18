@@ -29,16 +29,10 @@ public class Monster : Unit
     public override void Damage(float amount, Unit source)
     {
         base.Damage(amount, source);
-        currentHealth -= amount;
-        if (currentHealth <= 0)
-        {
-            Debug.Log($"{name} 사망!");
-        }
     }
 
     public override void Heal(float amount, Unit source)
     {
         base.Heal(amount, source);
-        currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
     }
 }
