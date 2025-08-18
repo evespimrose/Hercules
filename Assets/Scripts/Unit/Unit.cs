@@ -44,6 +44,8 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
     public bool IsDead { get; private set; } = false;
     public event Action<Unit> OnDied;
 
+    public bool IsResurrect { get; private set; } = false;
+
     protected virtual void Awake()
     {
         // currentHealth 초기화(0이거나 미설정이면 max로)
@@ -74,6 +76,13 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
     public virtual void Die()
     {
         if (IsDead) return;
+
+        if (IsResurrect)
+        {
+            Resurrect();
+            return;
+        }
+
         IsDead = true;
         UnityEngine.Debug.Log($"[Unit] {name} Die()");
 
