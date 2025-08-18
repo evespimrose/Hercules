@@ -100,6 +100,6 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
 
     public virtual void Resurrect()
     {
-
+        UnityEngine.Debug.Log($"[Unit] {name} Resurrect()");
     }
 }
