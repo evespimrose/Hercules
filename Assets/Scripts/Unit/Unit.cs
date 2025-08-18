@@ -25,7 +25,10 @@
 //    }
 //}
 
-using System;              // Action 사용
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System;
 using UnityEngine;
 
 public abstract class Unit : MonoBehaviour, IDamageable, IHealable
@@ -54,7 +57,7 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
 
         amount = Mathf.Max(0f, amount);
         currentHealth = Mathf.Max(0f, currentHealth - amount);
-        Debug.Log($"{name}이(가) {(source ? source.name : "알 수 없음")} 로부터 {amount} 피해를 받음. HP={currentHealth}/{maxHealth}");
+        UnityEngine.Debug.Log($"{name}이(가) {(source ? source.name : "알 수 없음")} 로부터 {amount} 피해를 받음. HP={currentHealth}/{maxHealth}");
 
         if (currentHealth <= 0f) Die();
     }
@@ -65,19 +68,19 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
 
         amount = Mathf.Max(0f, amount);
         currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
-        Debug.Log($"{name}이(가) {(source ? source.name : "알 수 없음")} 로부터 {amount} 회복. HP={currentHealth}/{maxHealth}");
+        UnityEngine.Debug.Log($"{name}이(가) {(source ? source.name : "알 수 없음")} 로부터 {amount} 회복. HP={currentHealth}/{maxHealth}");
     }
 
     public virtual void Die()
     {
         if (IsDead) return;
         IsDead = true;
-        Debug.Log($"[Unit] {name} Die()");
+        UnityEngine.Debug.Log($"[Unit] {name} Die()");
 
         var rb = GetComponent<Rigidbody2D>();
-        if (rb) rb.simulated = false;
+        if (rb) rb.simulated = false;           //죽은 뒤 쓰러지는 연출을 원하면 rb.simulated=false 대신 rb.velocity = Vector2.zero; rb.constraints = Freeze...; 식으로 부분 제어.
 
-        var cols = GetComponentsInChildren<Collider2D>(true);
+                var cols = GetComponentsInChildren<Collider2D>(true);
         foreach (var col in cols) if (col) col.enabled = false;
 
         var pc = GetComponent<PlayerController>(); if (pc) pc.enabled = false;
