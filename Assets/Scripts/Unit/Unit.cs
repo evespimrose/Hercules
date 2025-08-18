@@ -88,4 +88,9 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         if (destroyOnDeath) Destroy(gameObject, deathDestroyDelay);
         else gameObject.SetActive(false);
     }
+
+    public virtual void Resurrect()
+    {
+
+    }
 }
