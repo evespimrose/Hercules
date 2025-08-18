@@ -138,56 +138,31 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         UnityEngine.Debug.Log($"[Unit] {name} Resurrect()");
     }
 
-    // ===== 버프 허브 =====
-    public virtual void Mesmerize(float time, Buff buff)
-    {
-        switch (buff)
+    // ============ Buff 시스템 ============
+    protected virtual Dictionary<Buff, IBuffEffect> BuffEffects { get; } =
+        new Dictionary<Buff, IBuffEffect>()
         {
-            case Buff.Knockback:
-                ApplyKnockback(lastHitDirection, defaultKnockbackForce);
-                break;
-            case Buff.Stun:
-                ApplyStun(time);
-                break;
-            case Buff.Invincible:
-                ApplyInvincible(time);
-                break;
-            case Buff.Hitstop:
-                ApplyHitstop(time);
-                break;
-            case Buff.None:
-            default:
-                break;
-        }
-    }
+            { Buff.Knockback, new KnockbackEffect() },
+            { Buff.Stun, new StunEffect() },
+            { Buff.Invincible, new InvincibleEffect() }
+        };
 
-    // 확장 오버로드: 방향/세기 전달 가능
-    public virtual void Mesmerize(float time, Buff buff, Vector2 direction, float magnitude)
+    public virtual void Mesmerize(float time, Buff buff, Vector2? dir = null, float magnitude = 0f)
     {
-        switch (buff)
-        {
-            case Buff.Knockback:
-                ApplyKnockback(direction, magnitude > 0f ? magnitude : defaultKnockbackForce);
-                break;
-            default:
-                Mesmerize(time, buff);
-                break;
-        }
+        if (BuffEffects.TryGetValue(buff, out var effect))
+            effect.Apply(this, time, dir, magnitude);
     }
 
     // ===== 개별 효과 구현 =====
-    protected virtual void ApplyKnockback(Vector2 fromAttackerToThisDir, float force)
+    public virtual void ApplyKnockback(Vector2 dir, float force)
     {
-        if (force <= 0f) return;
         var rb = GetComponent<Rigidbody2D>();
         if (!rb) return;
-        Vector2 pushDir = fromAttackerToThisDir.sqrMagnitude > 0.0001f ? fromAttackerToThisDir.normalized : Vector2.right;
-        rb.AddForce(pushDir * force, ForceMode2D.Impulse);
+        rb.AddForce(dir.normalized * force, ForceMode2D.Impulse);
     }
 
-    protected virtual void ApplyStun(float time)
+    public virtual void ApplyStun(float time)
     {
-        time = Mathf.Max(0f, time);
         if (time <= 0f) return;
         if (stunRoutine != null) StopCoroutine(stunRoutine);
         stunRoutine = StartCoroutine(StunCoroutine(time));
@@ -195,36 +170,25 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
 
     protected virtual IEnumerator StunCoroutine(float time)
     {
-        isStunned = true;
         var rb = GetComponent<Rigidbody2D>();
         if (zeroHorizontalDuringStun && rb) rb.velocity = new Vector2(0f, rb.velocity.y);
-
         yield return new WaitForSeconds(time);
-
-        isStunned = false;
         stunRoutine = null;
     }
 
-    protected virtual void ApplyInvincible(float time)
+    public virtual void ApplyInvincible(float time)
     {
-        time = Mathf.Max(0f, time);
-        if (time <= 0f)
-        {
-            isInvincible = false;
-            return;
-        }
+        if (time <= 0f) return;
         if (invincibleRoutine != null) StopCoroutine(invincibleRoutine);
         invincibleRoutine = StartCoroutine(InvincibleCoroutine(time));
     }
 
-    IEnumerator InvincibleCoroutine(float time)
+    protected virtual IEnumerator InvincibleCoroutine(float time)
     {
-        isInvincible = true;
         yield return new WaitForSeconds(time);
-        isInvincible = false;
         invincibleRoutine = null;
     }
 
-    // 플레이어에서만 의미 있는 히트스톱(기본은 no-op)
-    protected virtual void ApplyHitstop(float time) { }
+    // Hitstop은 기본적으로 의미 없음
+    public virtual void ApplyHitstop(float time) { }
 }

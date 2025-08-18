@@ -6,6 +6,14 @@ public class Monster : Unit
 {
     private MonsterController monsterController;
 
+    protected override Dictionary<Buff, IBuffEffect> BuffEffects { get; } =
+        new Dictionary<Buff, IBuffEffect>()
+        {
+            { Buff.Knockback, new KnockbackEffect() },
+            { Buff.Stun, new StunEffect() },
+            { Buff.Invincible, new InvincibleEffect() }
+        };
+
     protected override void Awake()
     {
         base.Awake();

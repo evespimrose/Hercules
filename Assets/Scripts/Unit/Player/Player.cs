@@ -7,6 +7,15 @@ public class Player : Unit
     private PlayerController playerController;
     Coroutine hitstopRoutine;
 
+    protected override Dictionary<Buff, IBuffEffect> BuffEffects { get; } =
+        new Dictionary<Buff, IBuffEffect>()
+        {
+            { Buff.Knockback, new KnockbackEffect() },
+            { Buff.Stun, new StunEffect() },
+            { Buff.Invincible, new InvincibleEffect() },
+            { Buff.Hitstop, new HitstopEffect() }
+        };
+
     protected override void Awake()
     {
         base.Awake();
@@ -17,23 +26,19 @@ public class Player : Unit
     {
         if (IsDead) return;
 
-        // 플레이어 전용: 입력/능력 컴포넌트 비활성화
         foreach (var c in EnumerateControlBehaviours())
             if (c) c.enabled = false;
 
         base.Die();
     }
 
-    // 플레이어 전용 히트스톱
-    protected override void ApplyHitstop(float time)
+    public override void ApplyHitstop(float time)
     {
-        time = Mathf.Max(0f, time);
-        if (time <= 0f) return;
         if (hitstopRoutine != null) StopCoroutine(hitstopRoutine);
         hitstopRoutine = StartCoroutine(HitstopCoroutine(time));
     }
 
-    IEnumerator HitstopCoroutine(float time)
+    private IEnumerator HitstopCoroutine(float time)
     {
         float originalScale = Time.timeScale;
         Time.timeScale = 0.05f;
@@ -42,30 +47,18 @@ public class Player : Unit
         hitstopRoutine = null;
     }
 
-    // === Player 전용 Stun 처리 (컨트롤 차단 + 복원) ===
     protected override IEnumerator StunCoroutine(float time)
     {
-        isStunned = true;
-        var rb = GetComponent<Rigidbody2D>();
-
-        // 제어 관련 컴포넌트 수집 및 현재 상태 저장
+        // 조작 차단
         var controls = new List<Behaviour>(EnumerateControlBehaviours());
         var prev = new Dictionary<Behaviour, bool>(controls.Count);
         foreach (var c in controls) if (c) prev[c] = c.enabled;
-
-        // 비활성화
         foreach (var c in controls) if (c) c.enabled = false;
-
-        if (zeroHorizontalDuringStun && rb) rb.velocity = new Vector2(0f, rb.velocity.y);
 
         yield return new WaitForSeconds(time);
 
-        if (!IsDead)
-        {
-            foreach (var kv in prev) if (kv.Key) kv.Key.enabled = kv.Value;
-        }
-
-        isStunned = false;
+        // 원래 상태 복구
+        foreach (var kv in prev) if (kv.Key) kv.Key.enabled = kv.Value;
         stunRoutine = null;
     }
 
