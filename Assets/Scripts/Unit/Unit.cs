@@ -1,5 +1,31 @@
-using System.Collections;
-using System.Collections.Generic;
+//using System.Collections;
+//using System.Collections.Generic;
+//using System.Diagnostics;
+//using UnityEngine;
+
+//public abstract class Unit : MonoBehaviour, IDamageable, IHealable
+//{
+//    [Header("Unit Stats")]
+//    public float maxHealth = 100f;
+//    public float currentHealth;
+
+//    protected virtual void Awake()
+//    {
+//        currentHealth = maxHealth;
+//    }
+
+//    public virtual void Damage(float amount, Unit source)
+//    {
+//        UnityEngine.Debug.Log($"{name}이(가) {source.name}로부터 {amount} 피해를 받음.");
+//    }
+
+//    public virtual void Heal(float amount, Unit source)
+//    {
+//        UnityEngine.Debug.Log($"{name}이(가) {source.name}로부터 {amount}만큼 회복됨.");
+//    }
+//}
+
+using System;              // Action 사용
 using UnityEngine;
 
 public abstract class Unit : MonoBehaviour, IDamageable, IHealable
@@ -8,18 +34,63 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
     public float maxHealth = 100f;
     public float currentHealth;
 
+    [Header("Death")]
+    public bool destroyOnDeath = false;
+    public float deathDestroyDelay = 0.5f;
+
+    public bool IsDead { get; private set; } = false;
+    public event Action<Unit> OnDied;
+
     protected virtual void Awake()
     {
-        currentHealth = maxHealth;
+        // currentHealth 초기화(0이거나 미설정이면 max로)
+        currentHealth = (currentHealth <= 0f) ? maxHealth
+                                              : Mathf.Clamp(currentHealth, 0f, maxHealth);
     }
 
     public virtual void Damage(float amount, Unit source)
     {
-        Debug.Log($"{name}이(가) {source.name}로부터 {amount} 피해를 받음.");
+        if (IsDead) return;
+
+        amount = Mathf.Max(0f, amount);
+        currentHealth = Mathf.Max(0f, currentHealth - amount);
+        Debug.Log($"{name}이(가) {(source ? source.name : "알 수 없음")} 로부터 {amount} 피해를 받음. HP={currentHealth}/{maxHealth}");
+
+        if (currentHealth <= 0f) Die();
     }
 
     public virtual void Heal(float amount, Unit source)
     {
-        Debug.Log($"{name}이(가) {source.name}로부터 {amount}만큼 회복됨.");
+        if (IsDead) return;
+
+        amount = Mathf.Max(0f, amount);
+        currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
+        Debug.Log($"{name}이(가) {(source ? source.name : "알 수 없음")} 로부터 {amount} 회복. HP={currentHealth}/{maxHealth}");
+    }
+
+    public virtual void Die()
+    {
+        if (IsDead) return;
+        IsDead = true;
+        Debug.Log($"[Unit] {name} Die()");
+
+        // 물리/충돌 끄기
+        var rb = GetComponent<Rigidbody2D>();
+        if (rb) rb.simulated = false;
+
+        var cols = GetComponentsInChildren<Collider2D>(true);
+        foreach (var col in cols) if (col) col.enabled = false;
+
+        // 플레이어 조작/능력 비활성화 (?. 대입 금지 → 안전한 null 체크 후 대입)
+        var pc = GetComponent<PlayerController>(); if (pc) pc.enabled = false;
+        var move = GetComponent<MoveAbilityMB>(); if (move) move.enabled = false;
+        var jump = GetComponent<JumpAbilityMB>(); if (jump) jump.enabled = false;
+        var dash = GetComponent<DashAbilityMB>(); if (dash) dash.enabled = false;
+        var atk = GetComponent<AttackAbilityMB>(); if (atk) atk.enabled = false;
+
+        OnDied?.Invoke(this);
+
+        if (destroyOnDeath) Destroy(gameObject, deathDestroyDelay);
+        else gameObject.SetActive(false);
     }
 }
