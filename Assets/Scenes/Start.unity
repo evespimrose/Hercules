@@ -800,6 +800,8 @@ MonoBehaviour:
   currentHealth: 0
   destroyOnDeath: 0
   deathDestroyDelay: 0.5
+  defaultKnockbackForce: 8
+  zeroHorizontalDuringStun: 1
 --- !u!114 &1542632297
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1363,6 +1365,10 @@ MonoBehaviour:
   currentHealth: 0
   destroyOnDeath: 0
   deathDestroyDelay: 0.5
+  defaultKnockbackForce: 8
+  zeroHorizontalDuringStun: 1
+  enableIndomitable: 1
+  indomitableDuration: 5
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -40,7 +40,8 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         Stun,
         Invincible,
         // 확장 여지: Slow, Root, Poison, Burn, Shield, Regeneration 등
-        Hitstop // 기본 유닛은 무시, 플레이어에서만 처리
+        Hitstop, // 기본 유닛은 무시, 플레이어에서만 처리
+        Indomitable     //불굴(HP 1미만이면 5초 무적 후 사망)
     }
 
     [Header("Unit Stats")]
@@ -150,7 +151,7 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
     public virtual void Mesmerize(float time, Buff buff, Vector2? dir = null, float magnitude = 0f)
     {
         if (BuffEffects.TryGetValue(buff, out var effect))
-            effect.Apply(this, time, dir, magnitude);
+            effect.Apply(this, time, dir ?? lastHitDirection, magnitude);
     }
 
     // ===== 개별 효과 구현 =====

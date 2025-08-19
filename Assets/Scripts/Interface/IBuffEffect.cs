@@ -41,3 +41,28 @@ public class HitstopEffect : IBuffEffect
             player.ApplyHitstop(time);
     }
 }
+
+// ---- 플레이어 전용 Buff ----
+// 버프명 : 불굴
+// 버프효과 : HP가 1미만으로 내려갈 시 5초간 무적버프
+public class IndomitableEffect : IBuffEffect
+{
+    public void Apply(Unit target, float time, Vector2? dir, float magnitude)
+    {
+        if (target is Player p)
+        {
+            p.TriggerIndomitable(time);
+            return;
+        }
+
+        // 그 외 유닛: "무적 + time 후 강제 사망"의 일반형
+        target.ApplyInvincible(time);
+        target.StartCoroutine(KillAfter(target, time));
+    }
+
+    private System.Collections.IEnumerator KillAfter(Unit t, float time)
+    {
+        yield return new WaitForSeconds(time);
+        t.Die();
+    }
+}
