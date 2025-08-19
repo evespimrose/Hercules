@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine;
 
 public class Player : Unit
@@ -15,6 +14,18 @@ public class Player : Unit
     bool indomitableActive;
     bool indomitableConsumed;
     Coroutine indomitableRoutine;
+
+    // 외부에서 상태 조회/사용 가능 여부
+    public bool IsIndomitableActive => indomitableActive;
+    public bool CanUseIndomitable => enableIndomitable && !indomitableActive && !indomitableConsumed;
+
+    // 낙사/함정 등 "치명 상황"에서 호출: 가능하면 불굴을 발동하고 true 반환
+    public bool TryTriggerIndomitableOnFatal()
+    {
+        if (!CanUseIndomitable) return false;
+        TriggerIndomitable(indomitableDuration);
+        return true;
+    }
 
     protected override Dictionary<Buff, IBuffEffect> BuffEffects { get; } =
         new Dictionary<Buff, IBuffEffect>()
@@ -36,12 +47,12 @@ public class Player : Unit
     public override void Damage(float amount, Unit source)
     {
         if (IsDead) return;
-        if (isInvincible) { UnityEngine.Debug.Log($"{name} 무적: 피해 무시"); return; }
+        if (isInvincible) { Debug.Log($"{name} 무적: 피해 무시"); return; }
 
         amount = Mathf.Max(0f, amount);
         float pendingHp = Mathf.Max(0f, currentHealth - amount);
 
-        // 자동 발동
+        // 자동 발동(한 번만)
         if (enableIndomitable && !indomitableActive && !indomitableConsumed && pendingHp < 1f)
         {
             if (source)
@@ -56,7 +67,7 @@ public class Player : Unit
         base.Damage(amount, source);
     }
 
-    // 외부에서도 버프로 호출 가능하게 공개 메서드 제공
+    // 외부에서도 버프로 호출 가능하게 공개 메서드
     public void TriggerIndomitable(float duration)
     {
         if (!enableIndomitable || indomitableActive || indomitableConsumed) return;
@@ -65,14 +76,14 @@ public class Player : Unit
         indomitableActive = true;
         indomitableConsumed = true;
 
-        // 5초 무적
+        // 무적 부여
         Mesmerize(duration, Buff.Invincible);
 
-        // 5초 뒤 강제 사망
+        // duration 뒤 강제 사망
         if (indomitableRoutine != null) StopCoroutine(indomitableRoutine);
         indomitableRoutine = StartCoroutine(IndomitableRoutine(duration));
 
-        UnityEngine.Debug.Log($"[Player] Indomitable TRIGGERED: {duration}초 후 사망");
+        Debug.Log($"[Player] Indomitable TRIGGERED: {duration}초 후 사망");
     }
 
     IEnumerator IndomitableRoutine(float time)
@@ -82,25 +93,16 @@ public class Player : Unit
         Die(); // 무적 종료와 무관하게 강제 사망
     }
 
-    public bool CanUseIndomitable => enableIndomitable && !indomitableActive && !indomitableConsumed;
-
     public void ResetIndomitable(bool clearInvincibility = true)
     {
-        //  불굴 사망 타이머 중단
         if (indomitableRoutine != null) { StopCoroutine(indomitableRoutine); indomitableRoutine = null; }
-
-        //  상태 플래그 리셋 → 다시 발동 가능
         indomitableActive = false;
         indomitableConsumed = false;
-
-        //  무적도 즉시 해제하여 완전 초기화
         if (clearInvincibility)
         {
             if (invincibleRoutine != null) { StopCoroutine(invincibleRoutine); invincibleRoutine = null; }
-            isInvincible = false; // 코루틴을 끊고 false로 내려줌
+            isInvincible = false;
         }
-
-        UnityEngine.Debug.Log("[Player] Indomitable reset" + (clearInvincibility ? " (invincibility cleared)" : ""));
     }
 
 
@@ -129,6 +131,7 @@ public class Player : Unit
 
     protected override IEnumerator StunCoroutine(float time)
     {
+        // 조작 차단
         var controls = new List<Behaviour>(EnumerateControlBehaviours());
         var prev = new Dictionary<Behaviour, bool>(controls.Count);
         foreach (var c in controls) if (c) prev[c] = c.enabled;
@@ -136,6 +139,7 @@ public class Player : Unit
 
         yield return new WaitForSeconds(time);
 
+        // 원래 상태 복구
         foreach (var kv in prev) if (kv.Key) kv.Key.enabled = kv.Value;
         stunRoutine = null;
     }

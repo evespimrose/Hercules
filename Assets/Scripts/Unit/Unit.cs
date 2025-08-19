@@ -1,30 +1,3 @@
-//using System.Collections;
-//using System.Collections.Generic;
-//using System.Diagnostics;
-//using UnityEngine;
-
-//public abstract class Unit : MonoBehaviour, IDamageable, IHealable
-//{
-//    [Header("Unit Stats")]
-//    public float maxHealth = 100f;
-//    public float currentHealth;
-
-//    protected virtual void Awake()
-//    {
-//        currentHealth = maxHealth;
-//    }
-
-//    public virtual void Damage(float amount, Unit source)
-//    {
-//        UnityEngine.Debug.Log($"{name}이(가) {source.name}로부터 {amount} 피해를 받음.");
-//    }
-
-//    public virtual void Heal(float amount, Unit source)
-//    {
-//        UnityEngine.Debug.Log($"{name}이(가) {source.name}로부터 {amount}만큼 회복됨.");
-//    }
-//}
-
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -40,8 +13,8 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         Stun,
         Invincible,
         // 확장 여지: Slow, Root, Poison, Burn, Shield, Regeneration 등
-        Hitstop, // 기본 유닛은 무시, 플레이어에서만 처리
-        Indomitable     //불굴(HP 1미만이면 5초 무적 후 사망)
+        Hitstop,     // 기본 유닛은 무시, 플레이어에서만 처리
+        Indomitable  // 불굴(HP 1미만이면 5초 무적 후 사망)
     }
 
     [Header("Unit Stats")]
@@ -65,6 +38,8 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
 
     protected bool isStunned;
     protected bool isInvincible;
+    public bool IsInvincible => isInvincible; // ← DeathZone 등에서 조회
+
     protected Vector2 lastHitDirection; // (attacker -> this)
 
     protected Coroutine stunRoutine;
@@ -93,7 +68,7 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         if (source)
         {
             Vector2 dir = (transform.position - source.transform.position);
-            lastHitDirection = dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector2.zero;
+            lastHitDirection = dir.sqrMagnitude > 1e-6f ? dir.normalized : Vector2.zero;
         }
 
         if (currentHealth <= 0f) Die();
@@ -122,10 +97,9 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         UnityEngine.Debug.Log($"[Unit] {name} Die()");
 
         var rb = GetComponent<Rigidbody2D>();
-        if (rb) rb.simulated = false;           //죽은 뒤 쓰러지는 연출을 원하면 rb.simulated=false 대신 rb.velocity = Vector2.zero; rb.constraints = Freeze...; 식으로 부분 제어.
+        if (rb) rb.simulated = false; // 연출을 원하면 이 부분을 커스텀
 
         var cols = GetComponentsInChildren<Collider2D>(true);
-
         foreach (var col in cols) if (col) col.enabled = false;
 
         OnDied?.Invoke(this);
@@ -144,14 +118,21 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         new Dictionary<Buff, IBuffEffect>()
         {
             { Buff.Knockback, new KnockbackEffect() },
-            { Buff.Stun, new StunEffect() },
-            { Buff.Invincible, new InvincibleEffect() }
+            { Buff.Stun,      new StunEffect() },
+            { Buff.Invincible,new InvincibleEffect() }
+            // Hitstop/Indomitable는 Player에서 오버라이드로 매핑
         };
 
     public virtual void Mesmerize(float time, Buff buff, Vector2? dir = null, float magnitude = 0f)
     {
-        if (BuffEffects.TryGetValue(buff, out var effect))
-            effect.Apply(this, time, dir ?? lastHitDirection, magnitude);
+        if (!BuffEffects.TryGetValue(buff, out var effect)) return;
+
+        // dir이 없으면 유효한 lastHitDirection만 기본값으로 사용
+        Vector2? d = dir;
+        if (!d.HasValue && lastHitDirection.sqrMagnitude > 1e-6f)
+            d = lastHitDirection;
+
+        effect.Apply(this, time, d, magnitude);
     }
 
     // ===== 개별 효과 구현 =====
@@ -171,9 +152,17 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
 
     protected virtual IEnumerator StunCoroutine(float time)
     {
+        isStunned = true; // ← on
         var rb = GetComponent<Rigidbody2D>();
-        if (zeroHorizontalDuringStun && rb) rb.velocity = new Vector2(0f, rb.velocity.y);
-        yield return new WaitForSeconds(time);
+        float t = 0f;
+        while (t < time)
+        {
+            if (zeroHorizontalDuringStun && rb)
+                rb.velocity = new Vector2(0f, rb.velocity.y);
+            t += Time.deltaTime;
+            yield return null;
+        }
+        isStunned = false; // ← off
         stunRoutine = null;
     }
 
@@ -186,7 +175,9 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
 
     protected virtual IEnumerator InvincibleCoroutine(float time)
     {
+        isInvincible = true;           // ← on
         yield return new WaitForSeconds(time);
+        isInvincible = false;          // ← off
         invincibleRoutine = null;
     }
 
