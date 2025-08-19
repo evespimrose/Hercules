@@ -82,12 +82,27 @@ public class Player : Unit
         Die(); // 무적 종료와 무관하게 강제 사망
     }
 
-    public void ResetIndomitable()
+    public bool CanUseIndomitable => enableIndomitable && !indomitableActive && !indomitableConsumed;
+
+    public void ResetIndomitable(bool clearInvincibility = true)
     {
+        //  불굴 사망 타이머 중단
         if (indomitableRoutine != null) { StopCoroutine(indomitableRoutine); indomitableRoutine = null; }
+
+        //  상태 플래그 리셋 → 다시 발동 가능
         indomitableActive = false;
         indomitableConsumed = false;
+
+        //  무적도 즉시 해제하여 완전 초기화
+        if (clearInvincibility)
+        {
+            if (invincibleRoutine != null) { StopCoroutine(invincibleRoutine); invincibleRoutine = null; }
+            isInvincible = false; // 코루틴을 끊고 false로 내려줌
+        }
+
+        UnityEngine.Debug.Log("[Player] Indomitable reset" + (clearInvincibility ? " (invincibility cleared)" : ""));
     }
+
 
     public override void Die()
     {

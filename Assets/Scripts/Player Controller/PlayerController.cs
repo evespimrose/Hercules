@@ -80,6 +80,7 @@ public class PlayerController : MonoBehaviour
     public JumpConfig jumpCfg;
     public DashConfig dashCfg;
     public AttackConfig atkCfg;
+    private Player player;
 
     CharacterMotor2D motor;
     MoveAbilityMB move;
@@ -103,6 +104,7 @@ public class PlayerController : MonoBehaviour
         jump = GetComponent<JumpAbilityMB>();
         dash = GetComponent<DashAbilityMB>();
         attack = GetComponent<AttackAbilityMB>();
+        player = GetComponent<Player>();
 
         // SO 연결
         if (move) move.cfg = moveCfg;
@@ -157,6 +159,21 @@ public class PlayerController : MonoBehaviour
 
         // 점프 타이머 갱신
         jump?.UpdateTimers(Time.deltaTime);
+
+        if (Input.GetKeyDown(KeyCode.R) && player != null)
+        {
+            bool wasUsable = player.CanUseIndomitable;              // 리셋 전 사용 가능 여부
+            player.ResetIndomitable(clearInvincibility: true);      // 완전 초기화(무적도 해제)
+            bool nowUsable = player.CanUseIndomitable;              // 리셋 후 사용 가능 여부
+
+            if (!wasUsable && nowUsable)
+                UnityEngine.Debug.Log("불굴 사용 불가 -> 사용가능");
+            else if (wasUsable && nowUsable)
+                UnityEngine.Debug.Log("불굴 사용 가능 -> 사용가능");
+            else
+                UnityEngine.Debug.Log("불굴 사용 불가 -> 사용불가 (enableIndomitable=false 등)"); // 예외 케이스 대비
+        }
+
     }
 
     void FixedUpdate()
