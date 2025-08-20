@@ -10,9 +10,13 @@ public class AttackAbilityMB : MonoBehaviour
     bool cooling, busy;
     public bool IsBusy => busy;
 
+    // 공격 배수 적용을 위해 Unit 참조
+    Unit ownerUnit;
+
     void Awake()
     {
         motor = GetComponent<CharacterMotor2D>();
+        ownerUnit = GetComponent<Unit>(); // 없으면 null 허용
     }
 
     public void TryStart()
@@ -26,11 +30,17 @@ public class AttackAbilityMB : MonoBehaviour
         busy = true; cooling = true;
         int hitCount = 0;
 
+        // 배수 캐싱 (없으면 1)
+        float timeScale = (ownerUnit != null) ? ownerUnit.AttackTimeScale : 1f;          // >1이면 느려짐
+        float dmgMul = (ownerUnit != null) ? ownerUnit.AttackDamageMultiplier : 1f;   // <1이면 약해짐
+
         // 공격 시작 로그
-        Debug.Log("attack");
+        Debug.Log($"attack (timeScale={timeScale:F2}, dmgMul={dmgMul:F2})");
 
         // StartUp
-        yield return new WaitForSeconds(cfg.startUp);
+        // yield return new WaitForSeconds(cfg.startUp);
+        float startUp = (cfg != null ? cfg.startUp : 0f) * timeScale;   // 시간 배수 적용
+        if (startUp > 0f) yield return new WaitForSeconds(startUp);
 
         // Active: 히트박스 생성
         Vector2 off = cfg.hitboxOffset;
@@ -50,7 +60,10 @@ public class AttackAbilityMB : MonoBehaviour
         var hb = go.AddComponent<Hitbox>();
         hb.attackerName = name;
         hb.debugLog = true;
-        hb.damage = cfg.damage;
+
+        // hb.damage = cfg.damage;
+        hb.damage = (cfg != null ? cfg.damage : 0f) * dmgMul;           // 데미지 배수 적용
+
         hb.knockback = new Vector2(motor.FacingRight ? cfg.knockback : -cfg.knockback, 2f);
 
         hb.OnHit += (col, dmg) =>
@@ -80,11 +93,15 @@ public class AttackAbilityMB : MonoBehaviour
         };
 
         // Active 유지
-        yield return new WaitForSeconds(cfg.active);
+        // yield return new WaitForSeconds(cfg.active);
+        float active = (cfg != null ? cfg.active : 0f) * timeScale;     // 시간 배수 적용
+        if (active > 0f) yield return new WaitForSeconds(active);
         Destroy(go);
 
         // Recovery
-        yield return new WaitForSeconds(cfg.recovery);
+        // yield return new WaitForSeconds(cfg.recovery);
+        float recovery = (cfg != null ? cfg.recovery : 0f) * timeScale; // 시간 배수 적용
+        if (recovery > 0f) yield return new WaitForSeconds(recovery);
 
         busy = false;
 
@@ -92,7 +109,9 @@ public class AttackAbilityMB : MonoBehaviour
         Debug.Log($"attack end (hits={hitCount})");
 
         // Cooldown
-        yield return new WaitForSeconds(cfg.cooldown);
+        // yield return new WaitForSeconds(cfg.cooldown);
+        float cooldown = (cfg != null ? cfg.cooldown : 0f) * timeScale; // 시간 배수 적용
+        if (cooldown > 0f) yield return new WaitForSeconds(cooldown);
         cooling = false;
     }
 }

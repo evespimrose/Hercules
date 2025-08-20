@@ -86,9 +86,9 @@ public class BleedingStackEffect : IBuffEffect
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
         float duration = (time > 0f) ? time : 5f;                 // 기본 5초
-        float baseDamage = (magnitude > 0f) ? magnitude : 7f;       // 1스택 기본 7
-        float perStackBonus = 1f;                                      // 스택당 +1 (원하면 조정)
-        int maxStacks = 5;                                       // 최대 5스택
+        float baseDamage = (magnitude > 0f) ? magnitude : 7f;     // 1스택 기본 7
+        float perStackBonus = 1f;                                  // 스택당 +1 (원하면 조정)
+        int maxStacks = 5;                                         // 최대 5스택
 
         target.ApplyBleedingStacking(
             duration,
@@ -100,3 +100,17 @@ public class BleedingStackEffect : IBuffEffect
         );
     }
 }
+
+// ---- 플레이어 전용 Buff ----
+// 버프명 : Exhaustion — 이동/공속/피해/점프 약화
+public class ExhaustionEffect : IBuffEffect
+{
+    public void Apply(Unit target, float time, Vector2? dir, float magnitude)
+    {
+        if (target is Player p)
+        {
+            p.ApplyExhaustion();  
+        }
+    }
+}
+

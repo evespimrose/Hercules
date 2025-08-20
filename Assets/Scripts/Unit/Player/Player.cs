@@ -16,6 +16,20 @@ public class Player : Unit
     bool indomitableConsumed;
     Coroutine indomitableRoutine;
 
+    // === Exhaustion(탈진) ===
+    [Header("Exhaustion (Player-only)")]
+    [Tooltip("Exhaustion 중 이동 속도 배수(0.2f = 80% 감소)")]
+    public float ExhaustionMoveMul = 0.2f;
+    [Tooltip("Exhaustion 중 공격 타이밍 배수(2f = 100% 느려짐)")]
+    public float ExhaustionAttackTimeScale = 2f;
+    [Tooltip("Exhaustion 중 공격 피해 배수(0.5f = 50% 감소)")]
+    public float ExhaustionDamageMul = 0.5f;
+    [Tooltip("Exhaustion 중 점프 높이 배수(0.5f = 50% 감소)")]
+    public float ExhaustionJumpMul = 0.5f;
+
+    bool ExhaustionActive;
+    Coroutine ExhaustionRoutine;
+
     protected override Dictionary<Buff, IBuffEffect> BuffEffects { get; } =
         new Dictionary<Buff, IBuffEffect>()
         {
@@ -23,9 +37,10 @@ public class Player : Unit
             { Buff.Stun,       new StunEffect()       },
             { Buff.Invincible, new InvincibleEffect() },
             { Buff.Hitstop,    new HitstopEffect()    },
-            { Buff.Indomitable,new IndomitableEffect() }, // 불굴
-            { Buff.Bleeding,   new BleedingEffect()   },  // 출혈
-            { Buff.BleedingStack, new BleedingStackEffect() },  //출혈 - 스택형
+            { Buff.Indomitable,new IndomitableEffect() },                   // 불굴
+            { Buff.Bleeding,   new BleedingEffect()   },                    // 출혈
+            { Buff.BleedingStack, new BleedingStackEffect() },              //출혈 - 스택형
+            { Buff.Exhaustion,       new ExhaustionEffect()       },        // 탈진
         };
 
     protected override void Awake()
@@ -105,12 +120,15 @@ public class Player : Unit
         UnityEngine.Debug.Log("[Player] Indomitable reset" + (clearInvincibility ? " (invincibility cleared)" : ""));
     }
 
-
     public override void Die()
     {
         if (IsDead) return;
         foreach (var c in EnumerateControlBehaviours())
             if (c) c.enabled = false;
+
+        // Exhaustion 디버프도 정리
+        ClearExhaustion();
+
         base.Die();
     }
 
@@ -149,5 +167,43 @@ public class Player : Unit
         var jp = GetComponent<JumpAbilityMB>(); if (jp) yield return jp;
         var ds = GetComponent<DashAbilityMB>(); if (ds) yield return ds;
         var atk = GetComponent<AttackAbilityMB>(); if (atk) yield return atk;
+    }
+
+    // ===== Exhaustion =====
+    public void ApplyExhaustion()
+    {
+        // 이미 적용 중이면 다시 실행할 필요 없음
+        if (ExhaustionActive) return;
+
+        SetExhaustionActive(true);
+        UnityEngine.Debug.Log("Exhaustion 시작");
+    }
+
+    // Exhaustion 해제
+    public void ClearExhaustion()
+    {
+        SetExhaustionActive(false);
+        UnityEngine.Debug.Log("Exhaustion 해제");
+    }
+
+
+
+    void SetExhaustionActive(bool active)
+    {
+        ExhaustionActive = active;
+        if (active)
+        {
+            _moveSpeedMultiplier = Mathf.Clamp(ExhaustionMoveMul, 0.01f, 1f);
+            _attackTimeScale = Mathf.Max(1f, ExhaustionAttackTimeScale);
+            _attackDamageMultiplier = Mathf.Clamp(ExhaustionDamageMul, 0.01f, 1f);
+            _jumpHeightMultiplier = Mathf.Clamp(ExhaustionJumpMul, 0.01f, 1f);
+        }
+        else
+        {
+            _moveSpeedMultiplier = 1f;
+            _attackTimeScale = 1f;
+            _attackDamageMultiplier = 1f;
+            _jumpHeightMultiplier = 1f;
+        }
     }
 }

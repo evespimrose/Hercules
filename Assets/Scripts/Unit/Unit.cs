@@ -8,17 +8,17 @@
 //    [Header("Unit Stats")] 
 //    public float maxHealth = 100f; 
 //    public float currentHealth; 
-
+//
 //    protected virtual void Awake() 
 //    { 
 //        currentHealth = maxHealth; 
 //    } 
-
+//
 //    public virtual void Damage(float amount, Unit source) 
 //    { 
 //        UnityEngine.Debug.Log($"{name}이(가) {source.name}로부터 {amount} 피해를 받음."); 
 //    } 
-
+//
 //    public virtual void Heal(float amount, Unit source) 
 //    { 
 //        UnityEngine.Debug.Log($"{name}이(가) {source.name}로부터 {amount}만큼 회복됨."); 
@@ -44,6 +44,7 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         Indomitable,     //불굴 : HP 1미만이면 5초 무적 후 사망
         Bleeding,        //출혈 : 출혈에 걸리면 HP가 5초동안 0.5초마다 7씩 닳음
         BleedingStack,   //스택형 출혈 : 적용 시 스택+1, 지속시간 리프레시, 틱 피해 증가
+        Exhaustion,      // 탈진 : 이동/공속/피해/점프 약화
     }
 
     [Header("Unit Stats")]
@@ -73,8 +74,8 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
     protected Coroutine invincibleRoutine;
 
     // ===== Bleeding 상태 관리 =====
-    protected Unit lastAttacker;                 // DOT 귀속용
-    protected Coroutine bleedingRoutine;           // 출혈 코루틴
+    protected Unit lastAttacker;                  // DOT 귀속용
+    protected Coroutine bleedingRoutine;          // 출혈 코루틴
     protected bool isBleeding;                    // 출혈 중 여부
     public bool IsBleeding => isBleeding;
 
@@ -84,7 +85,19 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
     protected float bleedTick;                     // 틱 간격(초)
     protected float bleedBase;                     // 1스택 기본 데미지
     protected float bleedPerStack;                 // 스택당 추가 데미지
-    protected int bleedMaxStacks;                // 최대 스택
+    protected int bleedMaxStacks;                  // 최대 스택
+
+    // ==== 런타임 스탯 배수(디버프/버프가 조정) ====
+    [Header("Stat Multipliers (runtime)")]
+    [SerializeField] protected float _moveSpeedMultiplier = 1f;         // 이동속도 배수
+    [SerializeField] protected float _attackTimeScale = 1f;             // 공격 타이밍 배수(>1 느려짐)
+    [SerializeField] protected float _attackDamageMultiplier = 1f;      // 공격 피해 배수
+    [SerializeField] protected float _jumpHeightMultiplier = 1f;        // 점프 높이 배수
+
+    public float MoveSpeedMultiplier => _moveSpeedMultiplier;
+    public float AttackTimeScale => _attackTimeScale;
+    public float AttackDamageMultiplier => _attackDamageMultiplier;
+    public float JumpHeightMultiplier => _jumpHeightMultiplier;
 
     protected virtual void Awake()
     {
@@ -165,9 +178,10 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         {
             { Buff.Knockback,  new KnockbackEffect()  },
             { Buff.Stun,       new StunEffect()       },
-            { Buff.Invincible, new InvincibleEffect() },
+            { Buff.Invincible, new InvincibleEffect() },       // 불굴
             { Buff.Bleeding,   new BleedingEffect()   },       // 단일형 출혈
             { Buff.BleedingStack, new BleedingStackEffect() }, // 스택형 출혈
+            { Buff.Exhaustion,       new ExhaustionEffect()       },       // 탈진
         };
 
     public virtual void Mesmerize(float time, Buff buff, Vector2? dir = null, float magnitude = 0f)
@@ -220,7 +234,7 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
     // Hitstop은 기본적으로 의미 없음
     public virtual void ApplyHitstop(float time) { }
 
-    // ===== 단일형 출혈(하위 호환) =====
+    // ===== 단일형 출혈 =====
     public virtual void ApplyBleeding(float duration, float tickInterval = 0.5f, float damagePerTick = 7f)
     {
         // 단일형: 스택 1, perStackBonus 0, 최대 1스택 → 과거 동작 유지

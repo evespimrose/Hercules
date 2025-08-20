@@ -1,5 +1,4 @@
-//using UnityEngine;
-
+//using UnityEngine; 
 //[RequireComponent(typeof(CharacterMotor2D))]
 //public class PlayerController : MonoBehaviour
 //{
@@ -8,39 +7,38 @@
 //    public JumpConfig jumpCfg;
 //    public DashConfig dashCfg;
 //    public AttackConfig atkCfg;
-
+//
 //    CharacterMotor2D motor;
-//    IInputSource input;
-
+//    IInputSource input; 
+//
 //    MoveAbility move;
 //    JumpAbility jump;
 //    DashAbility dash;
 //    AttackAbility attack;
-
+//
 //    float lastDownTapTime = -999f;  // S ������ ����
 //    bool movementLocked => (dash != null && dash.IsDashing) || (attack != null && attack.IsBusy);
-
+//
 //    void Awake()
 //    {
 //        motor = GetComponent<CharacterMotor2D>();
-//        input = GetComponent<IInputSource>(); // UnityInputSource �Բ� ���̱�
-
+//        input = GetComponent<IInputSource>(); // UnityInputSource �Բ� ���̱� 
 //        move = new MoveAbility(motor, moveCfg);
 //        jump = new JumpAbility(motor, jumpCfg);
 //        dash = new DashAbility(this, motor, dashCfg);
 //        attack = new AttackAbility(this, motor, atkCfg, transform);
 //    }
-
+//
 //    void Update()
 //    {
 //        // ���� (Space)
 //        if (input.JumpDown) jump.OnJumpPressed();
 //        if (input.JumpUp) jump.OnJumpReleased();
-
+//
 //        // ���/����
 //        if (input.DashDown) dash.TryStart(input.MoveX);
 //        if (input.AttackDown) attack.TryStart();
-
+//
 //        // S ������ �� ��Ӵٿ� (������ ���� ��)
 //        if (input.DownDown)
 //        {
@@ -48,22 +46,20 @@
 //                motor.TryDropThrough(); // ���ο��� IsGrounded, ���� üũ
 //            lastDownTapTime = Time.time;
 //        }
-
+//
 //        // ���� Ÿ�̸� ����
 //        jump.UpdateTimers(Time.deltaTime, motor.IsGrounded);
 //    }
-
+//
 //    void FixedUpdate()
 //    {
-//        bool crouching = input.DownHeld; // S ���� �� ��ũ����
-
+//        bool crouching = input.DownHeld; // S ���� �� ��ũ���� 
 //        // �̵�/����
 //        move.Tick(input.MoveX, movementLocked, crouching);
 //        jump.TryConsume();
 //        jump.Tick();
 //    }
 //}
-
 
 using System.Diagnostics;
 using UnityEngine;
@@ -121,7 +117,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        // ===== 입력 폴링 =====
+        // ===== 입력 폴링 ===== 
 
         // 수평 이동
         // moveX = Input.GetAxisRaw("Horizontal"); // A/D, ←/→
@@ -160,6 +156,13 @@ public class PlayerController : MonoBehaviour
         // 점프 타이머 갱신
         jump?.UpdateTimers(Time.deltaTime);
 
+        // ===== Exhaustion 트리거 =====
+        if (Input.GetKeyDown(KeyCode.T) && player != null)
+            player.ApplyExhaustion(); 
+        if (Input.GetKeyDown(KeyCode.Y) && player != null)
+            player.ClearExhaustion();
+
+
         if (Input.GetKeyDown(KeyCode.R) && player != null)
         {
             bool wasUsable = player.CanUseIndomitable;              // 리셋 전 사용 가능 여부
@@ -171,17 +174,16 @@ public class PlayerController : MonoBehaviour
             else if (wasUsable && nowUsable)
                 UnityEngine.Debug.Log("불굴 사용 가능 -> 사용가능");
             else
-                UnityEngine.Debug.Log("불굴 사용 불가 -> 사용불가 (enableIndomitable=false 등)"); // 예외 케이스 대비
+                UnityEngine.Debug.Log("불굴 사용 불가 -> 사용불가 (enableIndomitable=false 등)");
         }
-
     }
 
     void FixedUpdate()
     {
-        // 이동/점프 처리(물리 틱)
-        move?.Tick(moveX, movementLocked, downHeld);
+        // 이동/점프 처리(물리 틱) — Exhaustion의 이동속도 배수 반영
+        float moveMul = (player != null) ? player.MoveSpeedMultiplier : 1f;
+        move?.Tick(moveX * moveMul, movementLocked, downHeld);
         jump?.TryConsume();
         jump?.Tick();
     }
 }
-
