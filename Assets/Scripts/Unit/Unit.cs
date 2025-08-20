@@ -43,6 +43,7 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         Hitstop, // 기본 유닛은 무시, 플레이어에서만 처리
         Indomitable,     //불굴 : HP 1미만이면 5초 무적 후 사망
         Bleeding,        //출혈 : 출혈에 걸리면 HP가 5초동안 0.5초마다 7씩 닳음
+        BleedingStack,   //스택형 출혈 : 적용 시 스택+1, 지속시간 리프레시, 틱 피해 증가
     }
 
     [Header("Unit Stats")]
@@ -71,11 +72,19 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
     protected Coroutine stunRoutine;
     protected Coroutine invincibleRoutine;
 
-    // ===== Bleeding 상태 관리 추가 =====
+    // ===== Bleeding 상태 관리 =====
     protected Unit lastAttacker;                 // DOT 귀속용
-    protected Coroutine bleedingRoutine;         // 출혈 코루틴
-    protected bool isBleeding;                   // 출혈 중 여부
+    protected Coroutine bleedingRoutine;           // 출혈 코루틴
+    protected bool isBleeding;                    // 출혈 중 여부
     public bool IsBleeding => isBleeding;
+
+    // 스택형 출혈 런타임 파라미터
+    protected int bleedStacks;
+    protected float bleedRemain;                   // 남은 지속시간(초)
+    protected float bleedTick;                     // 틱 간격(초)
+    protected float bleedBase;                     // 1스택 기본 데미지
+    protected float bleedPerStack;                 // 스택당 추가 데미지
+    protected int bleedMaxStacks;                // 최대 스택
 
     protected virtual void Awake()
     {
@@ -99,7 +108,7 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
 
         if (source)
         {
-            lastAttacker = source; // 가해자 추적
+            lastAttacker = source; // DOT 가해자 기록
             Vector2 dir = (transform.position - source.transform.position);
             lastHitDirection = dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector2.zero;
         }
@@ -130,7 +139,7 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         UnityEngine.Debug.Log($"[Unit] {name} Die()");
 
         // 진행 중 상태 코루틴 정리
-        if (bleedingRoutine != null) { StopCoroutine(bleedingRoutine); bleedingRoutine = null; isBleeding = false; }
+        if (bleedingRoutine != null) { StopCoroutine(bleedingRoutine); bleedingRoutine = null; isBleeding = false; bleedStacks = 0; }
         if (invincibleRoutine != null) { StopCoroutine(invincibleRoutine); invincibleRoutine = null; isInvincible = false; }
 
         var rb = GetComponent<Rigidbody2D>();
@@ -154,16 +163,19 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
     protected virtual Dictionary<Buff, IBuffEffect> BuffEffects { get; } =
         new Dictionary<Buff, IBuffEffect>()
         {
-            { Buff.Knockback, new KnockbackEffect() },
-            { Buff.Stun, new StunEffect() },
+            { Buff.Knockback,  new KnockbackEffect()  },
+            { Buff.Stun,       new StunEffect()       },
             { Buff.Invincible, new InvincibleEffect() },
-            { Buff.Bleeding, new BleedingEffect() }, 
+            { Buff.Bleeding,   new BleedingEffect()   },       // 단일형 출혈
+            { Buff.BleedingStack, new BleedingStackEffect() }, // 스택형 출혈
         };
 
     public virtual void Mesmerize(float time, Buff buff, Vector2? dir = null, float magnitude = 0f)
     {
         if (BuffEffects.TryGetValue(buff, out var effect))
             effect.Apply(this, time, dir ?? lastHitDirection, magnitude);
+        else
+            UnityEngine.Debug.LogWarning($"[Buff] Effect not mapped: {buff} on {name}");
     }
 
     // ===== 개별 효과 구현 =====
@@ -208,35 +220,65 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
     // Hitstop은 기본적으로 의미 없음
     public virtual void ApplyHitstop(float time) { }
 
-    // ===== Bleeding(출혈) 구현 =====
+    // ===== 단일형 출혈(하위 호환) =====
     public virtual void ApplyBleeding(float duration, float tickInterval = 0.5f, float damagePerTick = 7f)
     {
-        if (duration <= 0f || tickInterval <= 0f || damagePerTick <= 0f) return;
-
-        // 재적용 시 타이머 리프레시
-        if (bleedingRoutine != null) StopCoroutine(bleedingRoutine);
-        bleedingRoutine = StartCoroutine(BleedingCoroutine(duration, tickInterval, damagePerTick));
+        // 단일형: 스택 1, perStackBonus 0, 최대 1스택 → 과거 동작 유지
+        ApplyBleedingStacking(duration, tickInterval, baseDamage: damagePerTick, perStackBonus: 0f, addStacks: 1, maxStacks: 1);
     }
 
-    protected virtual IEnumerator BleedingCoroutine(float duration, float tickInterval, float damagePerTick)
+    // ===== 스택형 출혈 =====
+    public virtual void ApplyBleedingStacking(
+        float duration,
+        float tickInterval = 0.5f,
+        float baseDamage = 7f,
+        float perStackBonus = 1f,
+        int addStacks = 1,
+        int maxStacks = 5)
     {
-        isBleeding = true;
-        UnityEngine.Debug.Log("Bleeding");
+        if (duration <= 0f || tickInterval <= 0f || baseDamage <= 0f) return;
 
-        float elapsed = 0f;
-        var wait = new WaitForSeconds(tickInterval);
+        // 파라미터 갱신
+        bleedTick = tickInterval;
+        bleedBase = baseDamage;
+        bleedPerStack = Mathf.Max(0f, perStackBonus);
+        bleedMaxStacks = Mathf.Max(1, maxStacks);
 
-        // duration 동안 매 tick DOT
-        while (elapsed < duration)
+        // 스택 증가 + 지속시간 리프레시
+        int prev = bleedStacks;
+        bleedStacks = Mathf.Clamp(bleedStacks + Mathf.Max(1, addStacks), 1, bleedMaxStacks);
+        bleedRemain = duration;
+
+        if (!isBleeding || bleedingRoutine == null)
         {
-            // 무적이면 Damage()가 자체적으로 무시
-            Damage(damagePerTick, lastAttacker);
+            bleedingRoutine = StartCoroutine(BleedingStackCoroutine());
+            isBleeding = true;
+            UnityEngine.Debug.Log($"BleedingStack start (stacks={bleedStacks})");
+        }
+        else
+        {
+            if (bleedStacks != prev)
+                UnityEngine.Debug.Log($"BleedingStack stack +{bleedStacks - prev} → {bleedStacks} (refresh {duration}s)");
+            else
+                UnityEngine.Debug.Log($"BleedingStack refresh {duration}s (stacks={bleedStacks})");
+        }
+    }
+
+    protected virtual IEnumerator BleedingStackCoroutine()
+    {
+        var wait = new WaitForSeconds(bleedTick);
+
+        while (bleedStacks > 0 && bleedRemain > 0f && !IsDead)
+        {
+            float dmg = Mathf.Max(0f, bleedBase + bleedPerStack * (bleedStacks - 1));
+            Damage(dmg, lastAttacker);
             yield return wait;
-            elapsed += tickInterval;
+            bleedRemain -= bleedTick;
         }
 
         isBleeding = false;
+        bleedStacks = 0;
         bleedingRoutine = null;
-        UnityEngine.Debug.Log("Out of bleeding.");
+        UnityEngine.Debug.Log("Out of bleeding (stack)");
     }
 }

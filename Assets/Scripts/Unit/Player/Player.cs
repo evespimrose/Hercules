@@ -25,6 +25,7 @@ public class Player : Unit
             { Buff.Hitstop,    new HitstopEffect()    },
             { Buff.Indomitable,new IndomitableEffect() }, // 불굴
             { Buff.Bleeding,   new BleedingEffect()   },  // 출혈
+            { Buff.BleedingStack, new BleedingStackEffect() },  //출혈 - 스택형
         };
 
     protected override void Awake()

@@ -608,7 +608,6 @@ GameObject:
   - component: {fileID: 1542632297}
   - component: {fileID: 1542632296}
   - component: {fileID: 1542632295}
-  - component: {fileID: 1542632299}
   m_Layer: 7
   m_Name: Enemy
   m_TagString: Untagged
@@ -749,7 +748,7 @@ Transform:
   m_GameObject: {fileID: 1542632289}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7.76, y: 1.33, z: 0.6}
+  m_LocalPosition: {x: -1.1, y: 1.5, z: 0.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -783,7 +782,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b53972f3868b7c4c908aff6e9131033, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
+  maxHealth: 1000
   currentHealth: 0
   destroyOnDeath: 0
   deathDestroyDelay: 0.5
@@ -816,24 +815,6 @@ MonoBehaviour:
   target: {fileID: 2115835342}
   selfTransform: {fileID: 1542632293}
   bb: {fileID: 1542632295}
---- !u!114 &1542632299
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1542632289}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 96f7a9498d8b8404aab646e425535bcd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 0
-  destroyOnDeath: 0
-  deathDestroyDelay: 0.5
-  defaultKnockbackForce: 8
-  zeroHorizontalDuringStun: 1
 --- !u!1 &1790667640
 GameObject:
   m_ObjectHideFlags: 0

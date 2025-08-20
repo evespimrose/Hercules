@@ -12,7 +12,8 @@ public class Monster : Unit, IHitReceiver
             { Buff.Knockback,  new KnockbackEffect()  },
             { Buff.Stun,       new StunEffect()       },
             { Buff.Invincible, new InvincibleEffect() },
-            { Buff.Bleeding,   new BleedingEffect()   }, 
+            { Buff.Bleeding,   new BleedingEffect()   },
+            { Buff.BleedingStack, new BleedingStackEffect() },
         };
 
     protected override void Awake()

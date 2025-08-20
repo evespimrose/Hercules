@@ -65,7 +65,8 @@ public class AttackAbilityMB : MonoBehaviour
 
             if (victim != null)
             {
-                victim.Mesmerize(5f, Unit.Buff.Bleeding);  // 5초 출혈(0.5초마다 7)
+                //victim.Mesmerize(5f, Unit.Buff.Bleeding);  // 5초 출혈(0.5초마다 7)
+                victim.Mesmerize(5f, Unit.Buff.BleedingStack);  // 5초 출혈(0.5초마다 7) + (스택당)1
                 Debug.Log($"[Bleeding] applied to {victim.name}");
             }
             else

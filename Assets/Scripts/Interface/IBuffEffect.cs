@@ -68,14 +68,35 @@ public class IndomitableEffect : IBuffEffect
 }
 
 // ---- 공용 Buff ----
-// 버프명 : 출혈(Bleeding)
-// 버프효과 : time 동안 0.5초마다 magnitude(없으면 7) 피해(DOT)
+// 버프명 : 출혈(Bleeding) — 단일형(하위호환)
 public class BleedingEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
-        float duration = (time > 0f) ? time : 5f;               // 기본 5초
-        float damagePerTick = (magnitude > 0f) ? magnitude : 7f;     // 기본 7
+        float duration = (time > 0f) ? time : 5f;           // 기본 5초
+        float damagePerTick = (magnitude > 0f) ? magnitude : 7f; // 기본 7
         target.ApplyBleeding(duration, 0.5f, damagePerTick);
+    }
+}
+
+// ---- 공용 Buff ----
+// 버프명 : BleedingStack — 스택형(중첩)
+public class BleedingStackEffect : IBuffEffect
+{
+    public void Apply(Unit target, float time, Vector2? dir, float magnitude)
+    {
+        float duration = (time > 0f) ? time : 5f;                 // 기본 5초
+        float baseDamage = (magnitude > 0f) ? magnitude : 7f;       // 1스택 기본 7
+        float perStackBonus = 1f;                                      // 스택당 +1 (원하면 조정)
+        int maxStacks = 5;                                       // 최대 5스택
+
+        target.ApplyBleedingStacking(
+            duration,
+            tickInterval: 0.5f,
+            baseDamage: baseDamage,
+            perStackBonus: perStackBonus,
+            addStacks: 1,
+            maxStacks: maxStacks
+        );
     }
 }
