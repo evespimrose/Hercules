@@ -66,3 +66,16 @@ public class IndomitableEffect : IBuffEffect
         t.Die();
     }
 }
+
+// ---- 공용 Buff ----
+// 버프명 : 출혈(Bleeding)
+// 버프효과 : time 동안 0.5초마다 magnitude(없으면 7) 피해(DOT)
+public class BleedingEffect : IBuffEffect
+{
+    public void Apply(Unit target, float time, Vector2? dir, float magnitude)
+    {
+        float duration = (time > 0f) ? time : 5f;               // 기본 5초
+        float damagePerTick = (magnitude > 0f) ? magnitude : 7f;     // 기본 7
+        target.ApplyBleeding(duration, 0.5f, damagePerTick);
+    }
+}

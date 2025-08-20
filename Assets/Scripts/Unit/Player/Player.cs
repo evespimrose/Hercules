@@ -23,7 +23,8 @@ public class Player : Unit
             { Buff.Stun,       new StunEffect()       },
             { Buff.Invincible, new InvincibleEffect() },
             { Buff.Hitstop,    new HitstopEffect()    },
-            { Buff.Indomitable,new IndomitableEffect() } // 불굴
+            { Buff.Indomitable,new IndomitableEffect() }, // 불굴
+            { Buff.Bleeding,   new BleedingEffect()   },  // 출혈
         };
 
     protected override void Awake()

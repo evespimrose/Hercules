@@ -1,83 +1,3 @@
-//using UnityEngine;
-//using System.Collections;
-//using System.Diagnostics;
-
-//public class AttackAbility : MonoBehaviour
-//{
-//    readonly MonoBehaviour runner;
-//    readonly CharacterMotor2D motor;
-//    readonly AttackConfig cfg;
-//    readonly Transform root;
-
-//    bool _cooling, _busy;
-//    public bool IsBusy => _busy;
-
-//    public AttackAbility(MonoBehaviour runner, CharacterMotor2D motor, AttackConfig cfg, Transform root)
-//    { this.runner = runner; this.motor = motor; this.cfg = cfg; this.root = root; }
-
-//    public void TryStart()
-//    {
-//        if (_busy || _cooling) return;
-//        runner.StartCoroutine(AttackRoutine());
-//    }
-
-//    IEnumerator AttackRoutine()
-//    {
-//        _busy = true;
-//        _cooling = true;
-
-//        int hitCount = 0;
-
-//        Debug.Log("attack");
-
-//        // StartUp
-//        yield return new WaitForSeconds(cfg.startUp);
-
-//        // Active: ��Ʈ�ڽ� ����
-//        Vector2 off = cfg.hitboxOffset;
-//        if (!motor.FacingRight) off.x = -off.x;
-
-//        var go = new GameObject("Hitbox");
-//        int layer = LayerMask.NameToLayer("PlayerAttack");
-//        if (layer >= 0) go.layer = layer;
-
-//        go.transform.SetParent(root);
-//        go.transform.position = (Vector2)root.position + off;
-
-//        var box = go.AddComponent<BoxCollider2D>();
-//        box.isTrigger = true;
-//        box.size = cfg.hitboxSize;
-
-//        var hb = go.AddComponent<Hitbox>();
-//        hb.damage = cfg.damage;
-//        hb.knockback = new Vector2(motor.FacingRight ? cfg.knockback : -cfg.knockback, 2f);
-
-//        // �� ����� ����/�ݹ�
-//        hb.attackerName = root.name;
-//        hb.debugLog = true;
-//        hb.OnHit += (col, dmg) =>
-//        {
-//            hitCount++;
-//        };
-
-//        // Active ����
-//        yield return new WaitForSeconds(cfg.active);
-//        Destroy(go);
-
-//        // Recovery
-//        yield return new WaitForSeconds(cfg.recovery);
-
-//        _busy = false;
-
-//        // ���� ���� + �̹� ���ݿ��� �� �� �� �¾Ҵ���
-//        Debug.Log($"attack end (hits={hitCount})");
-
-//        // Cooldown
-//        yield return new WaitForSeconds(cfg.cooldown);
-//        _cooling = false;
-//    }
-//}
-
 using UnityEngine;
 using System.Collections;
 
@@ -133,7 +53,30 @@ public class AttackAbilityMB : MonoBehaviour
         hb.damage = cfg.damage;
         hb.knockback = new Vector2(motor.FacingRight ? cfg.knockback : -cfg.knockback, 2f);
 
-        hb.OnHit += (col, dmg) => { hitCount++; };
+        hb.OnHit += (col, dmg) =>
+        {
+            hitCount++;
+
+            // 출혈 부여 시도: 피격자에서 Unit 찾기
+            var victim =
+                   col.GetComponentInParent<Unit>()
+                ?? col.GetComponent<Unit>()
+                ?? col.GetComponentInChildren<Unit>();
+
+            if (victim != null)
+            {
+                victim.Mesmerize(5f, Unit.Buff.Bleeding);  // 5초 출혈(0.5초마다 7)
+                Debug.Log($"[Bleeding] applied to {victim.name}");
+            }
+            else
+            {
+                // 디버그 : 어떤 오브젝트에서 실패했는지, 가지고 있는 컴포넌트 목록
+                var comps = col.GetComponents<Component>();
+                string compNames = string.Join(", ", System.Array.ConvertAll(comps, c => c ? c.GetType().Name : "null"));
+                string layerName = LayerMask.LayerToName(col.gameObject.layer);
+                Debug.LogWarning($"[Bleeding] NO Unit on hit target. collider={col.name}, layer={layerName}, comps=[{compNames}]");
+            }
+        };
 
         // Active 유지
         yield return new WaitForSeconds(cfg.active);

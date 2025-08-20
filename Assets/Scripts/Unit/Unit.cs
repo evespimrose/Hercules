@@ -1,29 +1,29 @@
-//using System.Collections;
-//using System.Collections.Generic;
-//using System.Diagnostics;
-//using UnityEngine;
+//using System.Collections; 
+//using System.Collections.Generic; 
+//using System.Diagnostics; 
+//using UnityEngine; 
 
-//public abstract class Unit : MonoBehaviour, IDamageable, IHealable
-//{
-//    [Header("Unit Stats")]
-//    public float maxHealth = 100f;
-//    public float currentHealth;
+//public abstract class Unit : MonoBehaviour, IDamageable, IHealable 
+//{ 
+//    [Header("Unit Stats")] 
+//    public float maxHealth = 100f; 
+//    public float currentHealth; 
 
-//    protected virtual void Awake()
-//    {
-//        currentHealth = maxHealth;
-//    }
+//    protected virtual void Awake() 
+//    { 
+//        currentHealth = maxHealth; 
+//    } 
 
-//    public virtual void Damage(float amount, Unit source)
-//    {
-//        UnityEngine.Debug.Log($"{name}이(가) {source.name}로부터 {amount} 피해를 받음.");
-//    }
+//    public virtual void Damage(float amount, Unit source) 
+//    { 
+//        UnityEngine.Debug.Log($"{name}이(가) {source.name}로부터 {amount} 피해를 받음."); 
+//    } 
 
-//    public virtual void Heal(float amount, Unit source)
-//    {
-//        UnityEngine.Debug.Log($"{name}이(가) {source.name}로부터 {amount}만큼 회복됨.");
-//    }
-//}
+//    public virtual void Heal(float amount, Unit source) 
+//    { 
+//        UnityEngine.Debug.Log($"{name}이(가) {source.name}로부터 {amount}만큼 회복됨."); 
+//    } 
+//} 
 
 using System.Collections;
 using System.Collections.Generic;
@@ -36,12 +36,13 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
     public enum Buff
     {
         None = 0,
-        Knockback,
-        Stun,
+        Knockback,       //넉백 :
+        Stun,            //기절 : 
         Invincible,
         // 확장 여지: Slow, Root, Poison, Burn, Shield, Regeneration 등
         Hitstop, // 기본 유닛은 무시, 플레이어에서만 처리
-        Indomitable     //불굴(HP 1미만이면 5초 무적 후 사망)
+        Indomitable,     //불굴 : HP 1미만이면 5초 무적 후 사망
+        Bleeding,        //출혈 : 출혈에 걸리면 HP가 5초동안 0.5초마다 7씩 닳음
     }
 
     [Header("Unit Stats")]
@@ -70,6 +71,12 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
     protected Coroutine stunRoutine;
     protected Coroutine invincibleRoutine;
 
+    // ===== Bleeding 상태 관리 추가 =====
+    protected Unit lastAttacker;                 // DOT 귀속용
+    protected Coroutine bleedingRoutine;         // 출혈 코루틴
+    protected bool isBleeding;                   // 출혈 중 여부
+    public bool IsBleeding => isBleeding;
+
     protected virtual void Awake()
     {
         // currentHealth 초기화(0이거나 미설정이면 max로)
@@ -92,6 +99,7 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
 
         if (source)
         {
+            lastAttacker = source; // 가해자 추적
             Vector2 dir = (transform.position - source.transform.position);
             lastHitDirection = dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector2.zero;
         }
@@ -121,11 +129,14 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         IsDead = true;
         UnityEngine.Debug.Log($"[Unit] {name} Die()");
 
+        // 진행 중 상태 코루틴 정리
+        if (bleedingRoutine != null) { StopCoroutine(bleedingRoutine); bleedingRoutine = null; isBleeding = false; }
+        if (invincibleRoutine != null) { StopCoroutine(invincibleRoutine); invincibleRoutine = null; isInvincible = false; }
+
         var rb = GetComponent<Rigidbody2D>();
-        if (rb) rb.simulated = false;           //죽은 뒤 쓰러지는 연출을 원하면 rb.simulated=false 대신 rb.velocity = Vector2.zero; rb.constraints = Freeze...; 식으로 부분 제어.
+        if (rb) rb.simulated = false;  //죽은 뒤 쓰러지는 연출을 원하면 rb.simulated=false 대신 rb.velocity = Vector2.zero; rb.constraints = Freeze...; 식으로 부분 제어.
 
         var cols = GetComponentsInChildren<Collider2D>(true);
-
         foreach (var col in cols) if (col) col.enabled = false;
 
         OnDied?.Invoke(this);
@@ -145,7 +156,8 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         {
             { Buff.Knockback, new KnockbackEffect() },
             { Buff.Stun, new StunEffect() },
-            { Buff.Invincible, new InvincibleEffect() }
+            { Buff.Invincible, new InvincibleEffect() },
+            { Buff.Bleeding, new BleedingEffect() }, 
         };
 
     public virtual void Mesmerize(float time, Buff buff, Vector2? dir = null, float magnitude = 0f)
@@ -186,10 +198,45 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
 
     protected virtual IEnumerator InvincibleCoroutine(float time)
     {
+        // 무적 on/off 토글
+        isInvincible = true;
         yield return new WaitForSeconds(time);
+        isInvincible = false;
         invincibleRoutine = null;
     }
 
     // Hitstop은 기본적으로 의미 없음
     public virtual void ApplyHitstop(float time) { }
+
+    // ===== Bleeding(출혈) 구현 =====
+    public virtual void ApplyBleeding(float duration, float tickInterval = 0.5f, float damagePerTick = 7f)
+    {
+        if (duration <= 0f || tickInterval <= 0f || damagePerTick <= 0f) return;
+
+        // 재적용 시 타이머 리프레시
+        if (bleedingRoutine != null) StopCoroutine(bleedingRoutine);
+        bleedingRoutine = StartCoroutine(BleedingCoroutine(duration, tickInterval, damagePerTick));
+    }
+
+    protected virtual IEnumerator BleedingCoroutine(float duration, float tickInterval, float damagePerTick)
+    {
+        isBleeding = true;
+        UnityEngine.Debug.Log("Bleeding");
+
+        float elapsed = 0f;
+        var wait = new WaitForSeconds(tickInterval);
+
+        // duration 동안 매 tick DOT
+        while (elapsed < duration)
+        {
+            // 무적이면 Damage()가 자체적으로 무시
+            Damage(damagePerTick, lastAttacker);
+            yield return wait;
+            elapsed += tickInterval;
+        }
+
+        isBleeding = false;
+        bleedingRoutine = null;
+        UnityEngine.Debug.Log("Out of bleeding.");
+    }
 }
