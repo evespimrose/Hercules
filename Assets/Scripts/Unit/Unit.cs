@@ -47,7 +47,7 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         Exhaustion,      //탈진 : 이동/공속/피해/점프 약화
         SlowMove,        //이속 감소
         SlowAttack,      //공속 감소
-        WeekAttack,      //공격 데미지 감소
+        WeakAttack,      //공격 데미지 감소
         LowJump,         //점프 높이 감소
     }
 
@@ -188,7 +188,7 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
             { Buff.Exhaustion,       new ExhaustionEffect()       },       // 탈진
             { Buff.SlowMove,       new SlowMoveEffect()       },           // 이속감소
             { Buff.SlowAttack,       new SlowAttackEffect()       },       // 공속감소
-            { Buff.WeekAttack,       new WeekAttackEffect()       },       // 공격 데미지 감소
+            { Buff.WeakAttack,       new WeakAttackEffect()       },       // 공격 데미지 감소
             { Buff.LowJump,       new LowJumpEffect()       },             // 점프 높이 감소
         };
 

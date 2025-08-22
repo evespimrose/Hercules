@@ -65,10 +65,10 @@ using System.Diagnostics;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterMotor2D))]
-[RequireComponent(typeof(MoveAbilityMB))]
-[RequireComponent(typeof(JumpAbilityMB))]
-[RequireComponent(typeof(DashAbilityMB))]
-[RequireComponent(typeof(AttackAbilityMB))]
+[RequireComponent(typeof(MoveAbility))]
+[RequireComponent(typeof(JumpAbility))]
+[RequireComponent(typeof(DashAbility))]
+[RequireComponent(typeof(AttackAbility))]
 public class PlayerController : MonoBehaviour
 {
     [Header("Configs (ScriptableObject)")]
@@ -79,10 +79,10 @@ public class PlayerController : MonoBehaviour
     private Player player;
 
     CharacterMotor2D motor;
-    MoveAbilityMB move;
-    JumpAbilityMB jump;
-    DashAbilityMB dash;
-    AttackAbilityMB attack;
+    MoveAbility move;
+    JumpAbility jump;
+    DashAbility dash;
+    AttackAbility attack;
 
     // 입력 캐시
     float moveX;
@@ -96,10 +96,10 @@ public class PlayerController : MonoBehaviour
     void Awake()
     {
         motor = GetComponent<CharacterMotor2D>();
-        move = GetComponent<MoveAbilityMB>();
-        jump = GetComponent<JumpAbilityMB>();
-        dash = GetComponent<DashAbilityMB>();
-        attack = GetComponent<AttackAbilityMB>();
+        move = GetComponent<MoveAbility>();
+        jump = GetComponent<JumpAbility>();
+        dash = GetComponent<DashAbility>();
+        attack = GetComponent<AttackAbility>();
         player = GetComponent<Player>();
 
         // SO 연결
@@ -167,9 +167,9 @@ public class PlayerController : MonoBehaviour
         // ===== SlowAttack 트리거 =====
         if (Input.GetKeyDown(KeyCode.X) && player != null)
             player.ApplySlowAttack();
-        // ===== WeekAttack 트리거 =====
+        // ===== WeakAttack 트리거 =====
         if (Input.GetKeyDown(KeyCode.C) && player != null)
-            player.ApplyWeekAttack();
+            player.ApplyWeakAttack();
         // ===== LowJump 트리거 =====
         if (Input.GetKeyDown(KeyCode.V) && player != null)
             player.ApplyLowJump();

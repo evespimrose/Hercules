@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 
 [RequireComponent(typeof(CharacterMotor2D))]
-public class AttackAbilityMB : MonoBehaviour
+public class AttackAbility : MonoBehaviour
 {
     public AttackConfig cfg;
 

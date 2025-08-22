@@ -30,7 +30,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterMotor2D))]
-public class MoveAbilityMB : MonoBehaviour
+public class MoveAbility : MonoBehaviour
 {
     public MovementConfig cfg;
     CharacterMotor2D motor;

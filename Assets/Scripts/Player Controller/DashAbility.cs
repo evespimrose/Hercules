@@ -45,7 +45,7 @@ using UnityEngine;
 using System.Collections;
 
 [RequireComponent(typeof(CharacterMotor2D))]
-public class DashAbilityMB : MonoBehaviour
+public class DashAbility : MonoBehaviour
 {
     public DashConfig cfg;
 

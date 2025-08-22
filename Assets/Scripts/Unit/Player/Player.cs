@@ -30,7 +30,7 @@ public class Player : Unit
     bool ExhaustionActive;
     bool SlowMoveActive;
     bool SlowAttackActive;
-    bool WeekAttackActive;
+    bool WeakAttackActive;
     bool LowJumpActive;
     Coroutine ExhaustionRoutine;
 
@@ -47,7 +47,7 @@ public class Player : Unit
             { Buff.Exhaustion,       new ExhaustionEffect()       },        // 탈진
             { Buff.SlowMove,       new SlowMoveEffect()       },            // 이속감소
             { Buff.SlowAttack,       new SlowAttackEffect()       },        // 공속감소
-            { Buff.WeekAttack,       new WeekAttackEffect()       },        // 공격 데미지 감소
+            { Buff.WeakAttack,       new WeakAttackEffect()       },        // 공격 데미지 감소
             { Buff.LowJump,       new LowJumpEffect()       },              // 점프 높이 감소
         };
 
@@ -171,22 +171,22 @@ public class Player : Unit
     private IEnumerable<Behaviour> EnumerateControlBehaviours()
     {
         var pc = GetComponent<PlayerController>(); if (pc) yield return pc;
-        var mv = GetComponent<MoveAbilityMB>(); if (mv) yield return mv;
-        var jp = GetComponent<JumpAbilityMB>(); if (jp) yield return jp;
-        var ds = GetComponent<DashAbilityMB>(); if (ds) yield return ds;
-        var atk = GetComponent<AttackAbilityMB>(); if (atk) yield return atk;
+        var mv = GetComponent<MoveAbility>(); if (mv) yield return mv;
+        var jp = GetComponent<JumpAbility>(); if (jp) yield return jp;
+        var ds = GetComponent<DashAbility>(); if (ds) yield return ds;
+        var atk = GetComponent<AttackAbility>(); if (atk) yield return atk;
     }
 
     // ===== Exhaustion =====
     public void ApplyExhaustion()
     {
         // 이미 적용 중이면 다시 실행할 필요 없음
-        if (SlowMoveActive && SlowAttackActive && WeekAttackActive && LowJumpActive) return;
+        if (SlowMoveActive && SlowAttackActive && WeakAttackActive && LowJumpActive) return;
 
         //SetExhaustionActive(true);
         SetSlowMoveActive(true);
         SetSlowAttackActive(true);
-        SetWeekAttackActive(true);
+        SetWeakAttackActive(true);
         SetLowJumpActive(true);
         UnityEngine.Debug.Log("Exhaustion 시작");
     }
@@ -196,7 +196,7 @@ public class Player : Unit
     {
         SetSlowMoveActive(false);
         SetSlowAttackActive(false);
-        SetWeekAttackActive(false);
+        SetWeakAttackActive(false);
         SetLowJumpActive(false);
         UnityEngine.Debug.Log("Exhaustion 해제");
     }
@@ -221,14 +221,14 @@ public class Player : Unit
         UnityEngine.Debug.Log("SlowAttack 시작");
     }
 
-    // WeekAttack
-    public void ApplyWeekAttack()
+    // WeakAttack
+    public void ApplyWeakAttack()
     {
         // 이미 적용 중이면 다시 실행할 필요 없음
-        if (WeekAttackActive) return;
+        if (WeakAttackActive) return;
 
-        SetWeekAttackActive(true);
-        UnityEngine.Debug.Log("WeekAttack 시작");
+        SetWeakAttackActive(true);
+        UnityEngine.Debug.Log("WeakAttack 시작");
     }
 
     // LowJump
@@ -267,9 +267,9 @@ public class Player : Unit
         }
     }
 
-    void SetWeekAttackActive(bool active)
+    void SetWeakAttackActive(bool active)
     {
-        WeekAttackActive = active;
+        WeakAttackActive = active;
         if (active)
         {
             _attackDamageMultiplier = Mathf.Clamp(ExhaustionDamageMul, 0.01f, 1f);

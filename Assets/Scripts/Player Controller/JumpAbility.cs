@@ -76,7 +76,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterMotor2D))]
-public class JumpAbilityMB : MonoBehaviour
+public class JumpAbility : MonoBehaviour
 {
     public JumpConfig cfg;
 

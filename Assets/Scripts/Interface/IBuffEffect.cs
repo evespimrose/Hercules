@@ -141,14 +141,14 @@ public class SlowAttackEffect : IBuffEffect
 }
 
 // ---- 플레이어 전용 Buff ----
-// 버프명 : WeekAttack — 데미지 감소
-public class WeekAttackEffect : IBuffEffect
+// 버프명 : WeakAttack — 데미지 감소
+public class WeakAttackEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
         if (target is Player p)
         {
-            p.ApplyWeekAttack();
+            p.ApplyWeakAttack();
         }
     }
 }
