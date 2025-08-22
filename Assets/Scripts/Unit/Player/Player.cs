@@ -28,6 +28,10 @@ public class Player : Unit
     public float ExhaustionJumpMul = 0.5f;
 
     bool ExhaustionActive;
+    bool SlowMoveActive;
+    bool SlowAttackActive;
+    bool WeekAttackActive;
+    bool LowJumpActive;
     Coroutine ExhaustionRoutine;
 
     protected override Dictionary<Buff, IBuffEffect> BuffEffects { get; } =
@@ -41,6 +45,10 @@ public class Player : Unit
             { Buff.Bleeding,   new BleedingEffect()   },                    // 출혈
             { Buff.BleedingStack, new BleedingStackEffect() },              //출혈 - 스택형
             { Buff.Exhaustion,       new ExhaustionEffect()       },        // 탈진
+            { Buff.SlowMove,       new SlowMoveEffect()       },            // 이속감소
+            { Buff.SlowAttack,       new SlowAttackEffect()       },        // 공속감소
+            { Buff.WeekAttack,       new WeekAttackEffect()       },        // 공격 데미지 감소
+            { Buff.LowJump,       new LowJumpEffect()       },              // 점프 높이 감소
         };
 
     protected override void Awake()
@@ -173,36 +181,114 @@ public class Player : Unit
     public void ApplyExhaustion()
     {
         // 이미 적용 중이면 다시 실행할 필요 없음
-        if (ExhaustionActive) return;
+        if (SlowMoveActive && SlowAttackActive && WeekAttackActive && LowJumpActive) return;
 
-        SetExhaustionActive(true);
+        //SetExhaustionActive(true);
+        SetSlowMoveActive(true);
+        SetSlowAttackActive(true);
+        SetWeekAttackActive(true);
+        SetLowJumpActive(true);
         UnityEngine.Debug.Log("Exhaustion 시작");
     }
 
     // Exhaustion 해제
     public void ClearExhaustion()
     {
-        SetExhaustionActive(false);
+        SetSlowMoveActive(false);
+        SetSlowAttackActive(false);
+        SetWeekAttackActive(false);
+        SetLowJumpActive(false);
         UnityEngine.Debug.Log("Exhaustion 해제");
     }
 
-
-
-    void SetExhaustionActive(bool active)
+    // SlowMove
+    public void ApplySlowMove()
     {
-        ExhaustionActive = active;
+        // 이미 적용 중이면 다시 실행할 필요 없음
+        if (SlowMoveActive) return;
+
+        SetSlowMoveActive(true);
+        UnityEngine.Debug.Log("SlowMove 시작");
+    }
+
+    // SlowAttack
+    public void ApplySlowAttack()
+    {
+        // 이미 적용 중이면 다시 실행할 필요 없음
+        if (SlowAttackActive) return;
+
+        SetSlowAttackActive(true);
+        UnityEngine.Debug.Log("SlowAttack 시작");
+    }
+
+    // WeekAttack
+    public void ApplyWeekAttack()
+    {
+        // 이미 적용 중이면 다시 실행할 필요 없음
+        if (WeekAttackActive) return;
+
+        SetWeekAttackActive(true);
+        UnityEngine.Debug.Log("WeekAttack 시작");
+    }
+
+    // LowJump
+    public void ApplyLowJump()
+    {
+        // 이미 적용 중이면 다시 실행할 필요 없음
+        if (LowJumpActive) return;
+
+        SetLowJumpActive(true);
+        UnityEngine.Debug.Log("LowJump 시작");
+    }
+
+    void SetSlowMoveActive(bool active)
+    {
+        SlowMoveActive = active;
         if (active)
         {
             _moveSpeedMultiplier = Mathf.Clamp(ExhaustionMoveMul, 0.01f, 1f);
-            _attackTimeScale = Mathf.Max(1f, ExhaustionAttackTimeScale);
-            _attackDamageMultiplier = Mathf.Clamp(ExhaustionDamageMul, 0.01f, 1f);
-            _jumpHeightMultiplier = Mathf.Clamp(ExhaustionJumpMul, 0.01f, 1f);
         }
         else
         {
             _moveSpeedMultiplier = 1f;
+        }
+    }
+
+    void SetSlowAttackActive(bool active)
+    {
+        SlowAttackActive = active;
+        if (active)
+        {
+            _attackTimeScale = Mathf.Max(1f, ExhaustionAttackTimeScale);
+        }
+        else
+        {
             _attackTimeScale = 1f;
+        }
+    }
+
+    void SetWeekAttackActive(bool active)
+    {
+        WeekAttackActive = active;
+        if (active)
+        {
+            _attackDamageMultiplier = Mathf.Clamp(ExhaustionDamageMul, 0.01f, 1f);
+        }
+        else
+        {
             _attackDamageMultiplier = 1f;
+        }
+    }
+
+    void SetLowJumpActive(bool active)
+    {
+        LowJumpActive = active;
+        if (active)
+        {
+            _jumpHeightMultiplier = Mathf.Clamp(ExhaustionJumpMul, 0.01f, 1f);
+        }
+        else
+        {
             _jumpHeightMultiplier = 1f;
         }
     }

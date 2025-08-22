@@ -161,6 +161,18 @@ public class PlayerController : MonoBehaviour
             player.ApplyExhaustion(); 
         if (Input.GetKeyDown(KeyCode.Y) && player != null)
             player.ClearExhaustion();
+        // ===== SlowMove 트리거 =====
+        if (Input.GetKeyDown(KeyCode.Z) && player != null)
+            player.ApplySlowMove();
+        // ===== SlowAttack 트리거 =====
+        if (Input.GetKeyDown(KeyCode.X) && player != null)
+            player.ApplySlowAttack();
+        // ===== WeekAttack 트리거 =====
+        if (Input.GetKeyDown(KeyCode.C) && player != null)
+            player.ApplyWeekAttack();
+        // ===== LowJump 트리거 =====
+        if (Input.GetKeyDown(KeyCode.V) && player != null)
+            player.ApplyLowJump();
 
 
         if (Input.GetKeyDown(KeyCode.R) && player != null)

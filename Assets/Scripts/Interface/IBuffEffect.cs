@@ -114,3 +114,55 @@ public class ExhaustionEffect : IBuffEffect
     }
 }
 
+// ---- 플레이어 전용 Buff ----
+// 버프명 : SlowMove — 이동속도 감소
+public class SlowMoveEffect : IBuffEffect
+{
+    public void Apply(Unit target, float time, Vector2? dir, float magnitude)
+    {
+        if (target is Player p)
+        {
+            p.ApplySlowMove();
+        }
+    }
+}
+
+// ---- 플레이어 전용 Buff ----
+// 버프명 : SlowAttack — 공격속도 감소
+public class SlowAttackEffect : IBuffEffect
+{
+    public void Apply(Unit target, float time, Vector2? dir, float magnitude)
+    {
+        if (target is Player p)
+        {
+            p.ApplySlowAttack();
+        }
+    }
+}
+
+// ---- 플레이어 전용 Buff ----
+// 버프명 : WeekAttack — 데미지 감소
+public class WeekAttackEffect : IBuffEffect
+{
+    public void Apply(Unit target, float time, Vector2? dir, float magnitude)
+    {
+        if (target is Player p)
+        {
+            p.ApplyWeekAttack();
+        }
+    }
+}
+
+// ---- 플레이어 전용 Buff ----
+// 버프명 : LowJump — 점프 높이 감소
+public class LowJumpEffect : IBuffEffect
+{
+    public void Apply(Unit target, float time, Vector2? dir, float magnitude)
+    {
+        if (target is Player p)
+        {
+            p.ApplyLowJump();
+        }
+    }
+}
+

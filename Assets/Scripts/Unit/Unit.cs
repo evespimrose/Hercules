@@ -44,7 +44,11 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         Indomitable,     //불굴 : HP 1미만이면 5초 무적 후 사망
         Bleeding,        //출혈 : 출혈에 걸리면 HP가 5초동안 0.5초마다 7씩 닳음
         BleedingStack,   //스택형 출혈 : 적용 시 스택+1, 지속시간 리프레시, 틱 피해 증가
-        Exhaustion,      // 탈진 : 이동/공속/피해/점프 약화
+        Exhaustion,      //탈진 : 이동/공속/피해/점프 약화
+        SlowMove,        //이속 감소
+        SlowAttack,      //공속 감소
+        WeekAttack,      //공격 데미지 감소
+        LowJump,         //점프 높이 감소
     }
 
     [Header("Unit Stats")]
@@ -178,10 +182,14 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         {
             { Buff.Knockback,  new KnockbackEffect()  },
             { Buff.Stun,       new StunEffect()       },
-            { Buff.Invincible, new InvincibleEffect() },       // 불굴
-            { Buff.Bleeding,   new BleedingEffect()   },       // 단일형 출혈
-            { Buff.BleedingStack, new BleedingStackEffect() }, // 스택형 출혈
+            { Buff.Invincible, new InvincibleEffect() },                   // 불굴
+            { Buff.Bleeding,   new BleedingEffect()   },                   // 단일형 출혈
+            { Buff.BleedingStack, new BleedingStackEffect() },             // 스택형 출혈
             { Buff.Exhaustion,       new ExhaustionEffect()       },       // 탈진
+            { Buff.SlowMove,       new SlowMoveEffect()       },           // 이속감소
+            { Buff.SlowAttack,       new SlowAttackEffect()       },       // 공속감소
+            { Buff.WeekAttack,       new WeekAttackEffect()       },       // 공격 데미지 감소
+            { Buff.LowJump,       new LowJumpEffect()       },             // 점프 높이 감소
         };
 
     public virtual void Mesmerize(float time, Buff buff, Vector2? dir = null, float magnitude = 0f)
