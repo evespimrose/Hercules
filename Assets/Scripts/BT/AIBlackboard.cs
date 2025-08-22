@@ -2,7 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AIBlackboard : MonoBehaviour
+[System.Serializable]
+public class AIBlackboard
 {
     public bool moveChase;
     public bool moveEvade;

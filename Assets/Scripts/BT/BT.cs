@@ -1,7 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class BTNode : MonoBehaviour
+[System.Serializable]
+public abstract class BTNode
 {
     public enum State { None, Success, Failure, Running }
     public virtual State Tick()
@@ -10,6 +11,7 @@ public class BTNode : MonoBehaviour
     }
 }
 
+[System.Serializable]
 public class Sequence : BTNode
 {
     private List<BTNode> children;
@@ -26,6 +28,7 @@ public class Sequence : BTNode
     }
 }
 
+[System.Serializable]
 public class Selector : BTNode
 {
     private List<BTNode> children;
@@ -42,6 +45,7 @@ public class Selector : BTNode
     }
 }
 
+[System.Serializable]
 public class Parallel : BTNode
 {
     private List<BTNode> children;
