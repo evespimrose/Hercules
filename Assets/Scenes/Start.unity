@@ -607,6 +607,7 @@ GameObject:
   - component: {fileID: 1542632298}
   - component: {fileID: 1542632297}
   - component: {fileID: 1542632296}
+  - component: {fileID: 1542632299}
   m_Layer: 7
   m_Name: Monster
   m_TagString: Untagged
@@ -765,20 +766,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b53972f3868b7c4c908aff6e9131033, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 1000
-  currentHealth: 0
-  destroyOnDeath: 0
+  maxHealth: 300
+  currentHealth: 10
   deathDestroyDelay: 0.5
+  body: {fileID: 0}
   defaultKnockbackForce: 8
   zeroHorizontalDuringStun: 1
-  _moveSpeedMultiplier: 1
-  _attackTimeScale: 1
-  _attackDamageMultiplier: 1
-  _jumpHeightMultiplier: 1
-  collisionRadius: 0.5
-  hitDetectionLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
+  bleedBase: 0
+  bleedPerStack: 0
+  bleedTick: 0
+  bleedDuration: 5
 --- !u!114 &1542632297
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -823,6 +820,56 @@ MonoBehaviour:
     attack: 0
     target: {fileID: 0}
   monsterController: {fileID: 0}
+--- !u!114 &1542632299
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1542632289}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45790b5c55b6c7c4fb72cdb77b8a050e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentHealth: 300
+  currentStamina: 1
+  MaxHealth:
+    base: 300
+    mods: []
+  MoveSpeed:
+    base: 1
+    mods: []
+  AttackSpeed:
+    base: 1
+    mods: []
+  MaxJumpHeight:
+    base: 1
+    mods: []
+  StaminaMax:
+    base: 100
+    mods: []
+  StaminaRegenPerSec:
+    base: 0
+    mods: []
+  DamageMultiplier:
+    base: 1
+    mods: []
+  IncomingDamageMultiplier:
+    base: 1
+    mods: []
+  CritChance:
+    base: 0
+    mods: []
+  CritDamageMultiplier:
+    base: 1.5
+    mods: []
+  AggroRange:
+    base: 6
+    mods: []
+  EnrageMultiplier:
+    base: 1
+    mods: []
 --- !u!1 &1790667640
 GameObject:
   m_ObjectHideFlags: 0
@@ -1118,6 +1165,7 @@ GameObject:
   - component: {fileID: 2115835344}
   - component: {fileID: 2115835343}
   - component: {fileID: 2115835347}
+  - component: {fileID: 2115835348}
   m_Layer: 9
   m_Name: Player
   m_TagString: Player
@@ -1284,7 +1332,7 @@ Transform:
   m_GameObject: {fileID: 2115835335}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.3999996, y: 1.489101, z: 0}
+  m_LocalPosition: {x: -2.5, y: 1.49, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1355,22 +1403,68 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 940d69ceb55c76e41b707982b32876b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 0
-  destroyOnDeath: 0
+  maxHealth: 5000
+  currentHealth: 5000
   deathDestroyDelay: 0.5
+  body: {fileID: 0}
   defaultKnockbackForce: 8
   zeroHorizontalDuringStun: 1
-  _moveSpeedMultiplier: 1
-  _attackTimeScale: 1
-  _attackDamageMultiplier: 1
-  _jumpHeightMultiplier: 1
+  bleedBase: 2
+  bleedPerStack: 1
+  bleedTick: 1
+  bleedDuration: 5
   enableIndomitable: 1
   indomitableDuration: 5
-  ExhaustionMoveMul: 0.2
-  ExhaustionAttackTimeScale: 2
-  ExhaustionDamageMul: 0.5
-  ExhaustionJumpMul: 0.5
+--- !u!114 &2115835348
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2115835335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 357d105936a42d04aa18fcfce7aa6d1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentHealth: 100
+  currentStamina: 100
+  MaxHealth:
+    base: 5000
+    mods: []
+  MoveSpeed:
+    base: 1
+    mods: []
+  AttackSpeed:
+    base: 5
+    mods: []
+  MaxJumpHeight:
+    base: 1
+    mods: []
+  StaminaMax:
+    base: 100
+    mods: []
+  StaminaRegenPerSec:
+    base: 0
+    mods: []
+  DamageMultiplier:
+    base: 1
+    mods: []
+  IncomingDamageMultiplier:
+    base: 1
+    mods: []
+  CritChance:
+    base: 0
+    mods: []
+  CritDamageMultiplier:
+    base: 1.5
+    mods: []
+  DashStaminaCost:
+    base: 100
+    mods: []
+  IFrameMultiplier:
+    base: 1
+    mods: []
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
