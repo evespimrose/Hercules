@@ -1,117 +1,117 @@
 using UnityEngine;
 using System.Collections;
+using Hercules.StatsSystem;
 
 [RequireComponent(typeof(CharacterMotor2D))]
 public class AttackAbility : MonoBehaviour
 {
+    [Header("Config (ScriptableObject)")]
     public AttackConfig cfg;
 
+    [Header("Hitbox (persistent child)")]
+    public Hitbox hitbox; // 자식 히트박스(Trigger Collider) 참조
+
     CharacterMotor2D motor;
+    Unit ownerUnit;
+    StatsBase ownerStats;
+
     bool cooling, busy;
     public bool IsBusy => busy;
-
-    // 공격 배수 적용을 위해 Unit 참조
-    Unit ownerUnit;
 
     void Awake()
     {
         motor = GetComponent<CharacterMotor2D>();
-        ownerUnit = GetComponent<Unit>(); // 없으면 null 허용
+        ownerUnit = GetComponent<Unit>();
+        ownerStats = GetComponent<StatsBase>();
+
+        if (!hitbox) Debug.LogError($"{name}: AttackAbility.hitbox 가 비었습니다.");
+        if (hitbox) hitbox.Disarm(); // 시작 시 꺼두기
     }
 
     public void TryStart()
     {
-        if (busy || cooling) return;
+        if (cooling || busy) return;
         StartCoroutine(AttackRoutine());
     }
 
     IEnumerator AttackRoutine()
     {
-        busy = true; cooling = true;
-        int hitCount = 0;
+        cooling = true;
+        busy = true;
 
-        // 배수 캐싱 (없으면 1)
-        float timeScale = (ownerUnit != null) ? ownerUnit.AttackTimeScale : 1f;          // >1이면 느려짐
-        float dmgMul = (ownerUnit != null) ? ownerUnit.AttackDamageMultiplier : 1f;   // <1이면 약해짐
+        float timeScale = ownerUnit != null ? ownerUnit.AttackTimeScale : 1f;
 
-        // 공격 시작 로그
-        Debug.Log($"attack (timeScale={timeScale:F2}, dmgMul={dmgMul:F2})");
-
-        // StartUp
-        // yield return new WaitForSeconds(cfg.startUp);
-        float startUp = (cfg != null ? cfg.startUp : 0f) * timeScale;   // 시간 배수 적용
+        // 1) StartUp
+        float startUp = (cfg ? cfg.startUp : 0f) * timeScale;
         if (startUp > 0f) yield return new WaitForSeconds(startUp);
 
-        // Active: 히트박스 생성
-        Vector2 off = cfg.hitboxOffset;
-        if (!motor.FacingRight) off.x = -off.x;
+        // 2) Active — 이 구간에서만 히트박스 On
+        float active = (cfg ? cfg.active : 0.1f) * timeScale;
 
-        var go = new GameObject("Hitbox");
-        int layer = LayerMask.NameToLayer("PlayerAttack");
-        if (layer >= 0) go.layer = layer;
-
-        go.transform.SetParent(transform);
-        go.transform.position = (Vector2)transform.position + off;
-
-        var box = go.AddComponent<BoxCollider2D>();
-        box.isTrigger = true;
-        box.size = cfg.hitboxSize;
-
-        var hb = go.AddComponent<Hitbox>();
-        hb.attackerName = name;
-        hb.debugLog = true;
-
-        // hb.damage = cfg.damage;
-        hb.damage = (cfg != null ? cfg.damage : 0f) * dmgMul;           // 데미지 배수 적용
-
-        hb.knockback = new Vector2(motor.FacingRight ? cfg.knockback : -cfg.knockback, 2f);
-
-        hb.OnHit += (col, dmg) =>
+        if (hitbox)
         {
-            hitCount++;
-
-            // 출혈 부여 시도: 피격자에서 Unit 찾기
-            var victim =
-                   col.GetComponentInParent<Unit>()
-                ?? col.GetComponent<Unit>()
-                ?? col.GetComponentInChildren<Unit>();
-
-            if (victim != null)
+            // 히트박스 크기/오프셋 세팅(자식 BoxCollider2D 기준)
+            var box = hitbox.GetComponent<BoxCollider2D>();
+            if (box)
             {
-                //victim.Mesmerize(5f, Unit.Buff.Bleeding);  // 5초 출혈(0.5초마다 7)
-                victim.Mesmerize(5f, Unit.Buff.BleedingStack);  // 5초 출혈(0.5초마다 7) + (스택당)1
-                Debug.Log($"[Bleeding] applied to {victim.name}");
+                if (cfg) box.size = cfg.hitboxSize;
+                float facing = Mathf.Sign(transform.localScale.x == 0f ? 1f : transform.localScale.x);
+                Vector2 off = cfg ? cfg.hitboxOffset : Vector2.right;
+                box.offset = new Vector2(off.x * facing, off.y);
             }
-            else
-            {
-                // 디버그 : 어떤 오브젝트에서 실패했는지, 가지고 있는 컴포넌트 목록
-                var comps = col.GetComponents<Component>();
-                string compNames = string.Join(", ", System.Array.ConvertAll(comps, c => c ? c.GetType().Name : "null"));
-                string layerName = LayerMask.LayerToName(col.gameObject.layer);
-                Debug.LogWarning($"[Bleeding] NO Unit on hit target. collider={col.name}, layer={layerName}, comps=[{compNames}]");
-            }
-        };
 
-        // Active 유지
-        // yield return new WaitForSeconds(cfg.active);
-        float active = (cfg != null ? cfg.active : 0f) * timeScale;     // 시간 배수 적용
-        if (active > 0f) yield return new WaitForSeconds(active);
-        Destroy(go);
+            float baseDamage = (cfg ? cfg.damage : 10f);
 
-        // Recovery
-        // yield return new WaitForSeconds(cfg.recovery);
-        float recovery = (cfg != null ? cfg.recovery : 0f) * timeScale; // 시간 배수 적용
+            // 현재 CombatMath 미구현 상태 고려: 기존 체감 유지용
+            float dmgOut = baseDamage * (ownerUnit != null ? ownerUnit.AttackDamageMultiplier : 1f);
+
+            Vector2 kb = new Vector2(cfg ? cfg.knockback : 6f, 0f);
+
+            hitbox.Arm(ownerUnit, ownerStats, dmgOut, kb, Hitbox.HitMode.Single);
+
+            if (active > 0f) yield return new WaitForSeconds(active);
+
+            hitbox.Disarm();
+        }
+        else
+        {
+            if (active > 0f) yield return new WaitForSeconds(active);
+        }
+
+        // 3) Recovery
+        float recovery = (cfg ? cfg.recovery : 0f) * timeScale;
         if (recovery > 0f) yield return new WaitForSeconds(recovery);
 
         busy = false;
 
-        // 공격 종료 로그(히트 합계)
-        Debug.Log($"attack end (hits={hitCount})");
-
-        // Cooldown
-        // yield return new WaitForSeconds(cfg.cooldown);
-        float cooldown = (cfg != null ? cfg.cooldown : 0f) * timeScale; // 시간 배수 적용
+        // 4) Cooldown
+        float cooldown = (cfg ? cfg.cooldown : 0f) * timeScale;
         if (cooldown > 0f) yield return new WaitForSeconds(cooldown);
         cooling = false;
     }
+
+#if UNITY_EDITOR
+    // ── Gizmo: AttackConfig 기준 "예상 판정" 미리보기 ─────────────────────
+    void OnDrawGizmosSelected()
+    {
+        if (!cfg) return;
+
+        float facing = Mathf.Sign(transform.localScale.x == 0f ? 1f : transform.localScale.x);
+        Vector2 off = cfg.hitboxOffset;
+        Vector3 center = transform.TransformPoint(new Vector3(off.x * facing, off.y, 0f));
+        Vector3 size = new Vector3(cfg.hitboxSize.x, cfg.hitboxSize.y, 0.01f);
+
+        // 반투명 채움 + 외곽선
+        var prev = Gizmos.matrix;
+        Gizmos.matrix = Matrix4x4.identity;
+
+        Color fill = new Color(1f, 0.5f, 0f, 0.08f);
+        Color line = new Color(1f, 0.5f, 0f, 0.9f);
+
+        Gizmos.color = fill; Gizmos.DrawCube(center, size);
+        Gizmos.color = line; Gizmos.DrawWireCube(center, size);
+
+        Gizmos.matrix = prev;
+    }
+#endif
 }
