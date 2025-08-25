@@ -28,7 +28,7 @@ public class MonsterBT : MonoBehaviour
             bb = new AIBlackboard();
         }
 
-        Debug.Log($"[{name}] MonsterBT 초기화 완료 - 블랙보드 생성됨");
+        // Debug.Log($"[{name}] MonsterBT 초기화 완료 - 블랙보드 생성됨");
 
         // 이동과 공격을 병렬로 실행하도록 구조 변경
         // 회피와 추적도 병렬로 실행하여 더 자연스러운 행동 구현
@@ -42,7 +42,7 @@ public class MonsterBT : MonoBehaviour
         root = new Parallel(new List<BTNode> { moveChaseNode, attackNode });
 
 
-        Debug.Log($"[{name}] BT 구조 생성 완료 - 회피/추적/공격 병렬 실행");
+        // Debug.Log($"[{name}] BT 구조 생성 완료 - 회피/추적/공격 병렬 실행");
     }
 
     void Update()
@@ -76,10 +76,10 @@ public class MonsterBT : MonoBehaviour
         float currentAttackCooldown = monsterController.attackCooldown;
         
         // 파라미터 변경 시 로그 출력 (너무 자주 출력되지 않도록 제한)
-        if (Time.frameCount % 300 == 0) // 300프레임마다 한 번씩
-        {
-            Debug.Log($"[{name}] BT 파라미터 업데이트 - 공격범위: {currentAttackRange:F2}, 안전거리: {currentSafeDistance:F2}, 감지범위: {currentDetectionRange:F2}, 쿨다운: {currentAttackCooldown:F2}");
-        }
+        //if (Time.frameCount % 300 == 0) // 300프레임마다 한 번씩
+        //{
+        //    Debug.Log($"[{name}] BT 파라미터 업데이트 - 공격범위: {currentAttackRange:F2}, 안전거리: {currentSafeDistance:F2}, 감지범위: {currentDetectionRange:F2}, 쿨다운: {currentAttackCooldown:F2}");
+        //}
     }
     
     void UpdateAIState()
@@ -99,13 +99,13 @@ public class MonsterBT : MonoBehaviour
         bb.attack = distanceToTarget <= currentAttackRange;
         
         // 공격 상태 변경 시 로그
-        if (previousAttackState != bb.attack)
-        {
-            if (bb.attack)
-                Debug.Log($"[{name}] BT 공격 판단: 공격 범위 내 진입 (거리: {distanceToTarget:F2}, 범위: {currentAttackRange:F2})");
-            else
-                Debug.Log($"[{name}] BT 공격 판단: 공격 범위 밖 (거리: {distanceToTarget:F2}, 범위: {currentAttackRange:F2})");
-        }
+        //if (previousAttackState != bb.attack)
+        //{
+        //    if (bb.attack)
+        //        Debug.Log($"[{name}] BT 공격 판단: 공격 범위 내 진입 (거리: {distanceToTarget:F2}, 범위: {currentAttackRange:F2})");
+        //    else
+        //        Debug.Log($"[{name}] BT 공격 판단: 공격 범위 밖 (거리: {distanceToTarget:F2}, 범위: {currentAttackRange:F2})");
+        //}
         
         // 이동 상태는 BT의 액션에서 결정되므로 그대로 유지
         // BT의 액션이 실행되면 해당 상태가 true로 설정됨

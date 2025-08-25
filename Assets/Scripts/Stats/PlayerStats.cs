@@ -6,13 +6,15 @@ namespace Hercules.StatsSystem
     public class PlayerStats : StatsBase
     {
         [Header("Player Only")]
-        public StatValue DashStaminaCost = new StatValue { Base = 25f };
         public StatValue IFrameMultiplier = new StatValue { Base = 1f };
 
         protected override void Awake()
         {
             base.Awake();
-            HookOnChanged(DashStaminaCost, IFrameMultiplier);
+            HookOnChanged(IFrameMultiplier);
+
+            // 플레이어만 기본 크리 25%
+            CritChance.Base = 0.25f;  // 25%
         }
 
         public override void RecomputeDerived()

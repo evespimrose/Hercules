@@ -136,6 +136,7 @@ public class Hitbox : MonoBehaviour
 
     // 내부 상태
     Collider2D col;
+    readonly HashSet<Unit> _hitOnce = new HashSet<Unit>();
     // Continuous 모드: 유닛별 마지막 타격 시간 → tickInterval마다 1회
     readonly Dictionary<Unit, float> _lastHitAt = new Dictionary<Unit, float>();
 
@@ -167,21 +168,31 @@ public class Hitbox : MonoBehaviour
         tickInterval = Mathf.Max(0.01f, tick);
 
         armed = true;
+
+        // 스윙 시작 시 초기화
+        _hitOnce.Clear();
         _lastHitAt.Clear();
 
         if (col) col.enabled = true;
     }
 
-    /// <summary>액티브 구간 종료 시 호출.</summary>
     public void Disarm()
     {
         armed = false;
+
+        // 스윙 종료 시도 정리
+        _hitOnce.Clear();
         _lastHitAt.Clear();
+
         if (col) col.enabled = false;
     }
 
+
     void OnTriggerEnter2D(Collider2D other)
     {
+        if (other.GetComponent<Hitbox>() != null)
+            return;
+
         if (!armed) return;
 
         if (mode == HitMode.Single)
@@ -198,7 +209,7 @@ public class Hitbox : MonoBehaviour
 
     bool TryApplyHit(Collider2D other, bool respectTick)
     {
-        // 대상 Unit/Stats 찾기
+        // 1) 대상 Unit
         var targetUnit =
                other.GetComponentInParent<Unit>()
             ?? other.GetComponent<Unit>()
@@ -206,36 +217,72 @@ public class Hitbox : MonoBehaviour
         if (targetUnit == null) return false;
         if (ownerUnit != null && targetUnit == ownerUnit) return false; // 자기 자신 무시
 
+        // ★ 단발 모드: 한 스윙 1히트 보장 (멀티 콜라이더/중복 Enter 방지)
+        if (mode == HitMode.Single)
+        {
+            if (_hitOnce.Contains(targetUnit)) return false;
+            _hitOnce.Add(targetUnit);
+        }
+
+        // 2) 지속형 틱 간격
         if (respectTick)
         {
             if (_lastHitAt.TryGetValue(targetUnit, out float last))
                 if (Time.time - last < tickInterval) return false;
         }
 
-        var targetStats =
-               other.GetComponentInParent<StatsBase>()
-            ?? other.GetComponent<StatsBase>()
-            ?? other.GetComponentInChildren<StatsBase>();
+        // 3) 공격/방어 Stats 확보(넓게)
+        StatsBase atkStats =
+            ownerStats
+            ?? ownerUnit?.GetComponent<StatsBase>()
+            ?? ownerUnit?.GetComponentInChildren<StatsBase>()
+            ?? ownerUnit?.GetComponentInParent<StatsBase>();
 
-        // 최종 데미지 계산
-        float finalDamage = (ownerStats != null && targetStats != null)
-            ? CombatMath.ComputeDamage(ownerStats, targetStats, damage)
-            : damage;
+        StatsBase defStats =
+            targetUnit.GetComponent<StatsBase>()
+            ?? targetUnit.GetComponentInChildren<StatsBase>()
+            ?? targetUnit.GetComponentInParent<StatsBase>();
 
-        // 타격 적용
+        // 4) 최종 데미지 + 크리 여부
+        bool isCrit = false;
+        float finalDamage;
+        if (atkStats != null && defStats != null)
+        {
+            finalDamage = CombatMath.ComputeDamage(atkStats, defStats, damage, out isCrit);
+        }
+        else
+        {
+            if (debugLog)
+                Debug.LogWarning($"[Hitbox] CombatMath skipped. atkStats={(atkStats != null)}, defStats={(defStats != null)}. base={damage}");
+            finalDamage = damage;
+        }
+
+        // 5) 크리 로그
+        if (isCrit)
+            Debug.Log("Critical Hits !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        else if (debugLog)
+        {
+            float cc = atkStats ? Mathf.Clamp01(atkStats.CritChance.Value) : -1f;
+            Debug.Log($"[Hitbox] non-crit hit. critChance={cc}, finalDamage={finalDamage}");
+        }
+
+        // 6) 데미지/넉백 적용
         targetUnit.Damage(finalDamage, ownerUnit);
 
-        // 넉백: 공격자→피격자 방향, force = knockback.x
         Vector2 dir = ((Vector2)other.transform.position - (Vector2)transform.position).normalized;
         float force = knockback.x;
         if (force > 0f) targetUnit.ApplyKnockback(dir, force);
 
         if (debugLog) Debug.Log($"[HIT] {attackerName} -> {other.name} dmg={finalDamage}");
 
-        _lastHitAt[targetUnit] = Time.time;
+        _lastHitAt[targetUnit] = Time.time; // 지속형용 기록
         OnHit?.Invoke(other, finalDamage);
         return true;
     }
+
+
+
+
 
 #if UNITY_EDITOR
     // ── Gizmo: 히트 범위 시각화 ──────────────────────────────────────────────

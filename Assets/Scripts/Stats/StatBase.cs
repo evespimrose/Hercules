@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Hercules.StatsSystem
 {
     /// <summary>
-    ///Player/Monster가 공유하는 값과 계산 파이프라인
+    /// Player/Monster가 공유하는 값과 계산 파이프라인
     /// 파생 클래스(PlayerStats/MonsterStats)는 전용 스탯/파생 계산을 추가할 수 있음
     /// </summary>
     public class StatsBase : MonoBehaviour
@@ -12,7 +12,6 @@ namespace Hercules.StatsSystem
         // ===== 리소스(현재값을 갖는 자원형) =====
         [Header("Resources")]
         [SerializeField] private float currentHealth = 100f;
-        [SerializeField] private float currentStamina = 100f;
 
         // ===== 기본 스탯 =====
         [Header("Primary")]
@@ -21,14 +20,10 @@ namespace Hercules.StatsSystem
         public StatValue AttackSpeed = new StatValue { Base = 1f }; // 배수/스케일
         public StatValue MaxJumpHeight = new StatValue { Base = 1f };
 
-        [Header("Stamina")]
-        public StatValue StaminaMax = new StatValue { Base = 100f };
-        public StatValue StaminaRegenPerSec = new StatValue { Base = 0f };
-
         [Header("Combat (used by future CombatMath)")]
-        public StatValue DamageMultiplier = new StatValue { Base = 1f }; // 가하는 최종 피해 승수
-        public StatValue IncomingDamageMultiplier = new StatValue { Base = 1f }; // 받는 최종 피해 승수(>1=더 아픔, <1=저항)
-        public StatValue CritChance = new StatValue { Base = 0f }; // 0~1
+        public StatValue DamageMultiplier = new StatValue { Base = 1f };   // 가하는 최종 피해 승수
+        public StatValue IncomingDamageMultiplier = new StatValue { Base = 1f };   // 받는 최종 피해 승수(>1=더 아픔, <1=저항)
+        public StatValue CritChance = new StatValue { Base = 0f };   // 0~1
         public StatValue CritDamageMultiplier = new StatValue { Base = 1.5f }; // 1.5 = 150%
 
         // ===== 모듈(선택) =====
@@ -41,19 +36,15 @@ namespace Hercules.StatsSystem
             set => currentHealth = Mathf.Clamp(value, 0f, MaxHealth.Value);
         }
 
-        public float CurrentStamina
-        {
-            get => currentStamina;
-            set => currentStamina = Mathf.Clamp(value, 0f, StaminaMax.Value);
-        }
-
         protected virtual void Awake()
         {
             // 필요시 OnChanged 구독 → 파생 재계산 훅
-            HookOnChanged(MoveSpeed, AttackSpeed, MaxJumpHeight,
-                          MaxHealth, StaminaMax, StaminaRegenPerSec,
-                          DamageMultiplier, IncomingDamageMultiplier,
-                          CritChance, CritDamageMultiplier);
+            HookOnChanged(
+                MoveSpeed, AttackSpeed, MaxJumpHeight,
+                MaxHealth,
+                DamageMultiplier, IncomingDamageMultiplier,
+                CritChance, CritDamageMultiplier
+            );
         }
 
         protected void HookOnChanged(params StatValue[] values)

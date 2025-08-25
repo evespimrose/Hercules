@@ -62,12 +62,10 @@ public class AttackAbility : MonoBehaviour
 
             float baseDamage = (cfg ? cfg.damage : 10f);
 
-            // 현재 CombatMath 미구현 상태 고려: 기존 체감 유지용
-            float dmgOut = baseDamage * (ownerUnit != null ? ownerUnit.AttackDamageMultiplier : 1f);
-
             Vector2 kb = new Vector2(cfg ? cfg.knockback : 6f, 0f);
+            // 배수는 CombatMath에서만 적용: 베이스만 넘김
+            hitbox.Arm(ownerUnit, ownerStats, baseDamage, kb, Hitbox.HitMode.Single);
 
-            hitbox.Arm(ownerUnit, ownerStats, dmgOut, kb, Hitbox.HitMode.Single);
 
             if (active > 0f) yield return new WaitForSeconds(active);
 

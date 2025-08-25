@@ -272,9 +272,11 @@ public class Monster : Unit, IHitReceiver
     private void OnTriggerEnter2D(Collider2D other)
     {
         var hitbox = other.GetComponent<Hitbox>();
+        if (other.GetComponent<Hitbox>() != null)
+            return;
         if (hitbox != null)
         {
-            ProcessHitboxTrigger(hitbox, other.ClosestPoint(transform.position));
+            //ProcessHitboxTrigger(hitbox, other.ClosestPoint(transform.position));
             return;
         }
     }
@@ -296,19 +298,19 @@ public class Monster : Unit, IHitReceiver
     // ─────────────────────────────────────────────────────────────
 
     // (Trigger) 플레이어 Hitbox에 맞았을 때
-    private void ProcessHitboxTrigger(Hitbox hitbox, Vector2 contactPoint)
-    {
-        // Hitbox가 이미 CombatMath를 거쳐 Damage를 넣을 수도 있지만
-        // 방어적으로 한 번 더 처리 라인을 둡니다(중복 방지는 Hitbox 설계에 따름).
-        float damage = hitbox.damage;
-        Vector2 knockback = hitbox.knockback;
+    //private void ProcessHitboxTrigger(Hitbox hitbox, Vector2 contactPoint)
+    //{
+    //    // Hitbox가 이미 CombatMath를 거쳐 Damage를 넣을 수도 있지만
+    //    // 방어적으로 한 번 더 처리 라인을 둡니다(중복 방지는 Hitbox 설계에 따름).
+    //    float damage = hitbox.damage;
+    //    Vector2 knockback = hitbox.knockback;
 
-        // 직접 피격 처리
-        ReceiveHit(damage, knockback, contactPoint);
+    //    // 직접 피격 처리
+    //    ReceiveHit(damage, knockback, contactPoint);
 
-        if (hitbox.debugLog)
-            Debug.Log($"{name} (Monster) was hit by Hitbox: dmg={damage}");
-    }
+    //    if (hitbox.debugLog)
+    //        Debug.Log($"{name} (Monster) was hit by Hitbox: dmg={damage}");
+    //}
 
     // (Collision) 다른 오브젝트와의 물리 충돌 처리
     private void HandleCollision(GameObject other, Vector2 contactPoint)

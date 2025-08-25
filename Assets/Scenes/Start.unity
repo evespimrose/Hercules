@@ -767,7 +767,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 300
-  currentHealth: 10
+  currentHealth: 300
   deathDestroyDelay: 0.5
   body: {fileID: 0}
   defaultKnockbackForce: 8
@@ -776,6 +776,10 @@ MonoBehaviour:
   bleedPerStack: 0
   bleedTick: 0
   bleedDuration: 5
+  collisionRadius: 0.5
+  hitDetectionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!114 &1542632297
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -833,7 +837,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentHealth: 300
-  currentStamina: 1
   MaxHealth:
     base: 300
     mods: []
@@ -845,12 +848,6 @@ MonoBehaviour:
     mods: []
   MaxJumpHeight:
     base: 1
-    mods: []
-  StaminaMax:
-    base: 100
-    mods: []
-  StaminaRegenPerSec:
-    base: 0
     mods: []
   DamageMultiplier:
     base: 1
@@ -1146,6 +1143,110 @@ MonoBehaviour:
   onlyPlayer: 1
   playerTag: Player
   debugLog: 1
+--- !u!1 &2095118194
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2095118195}
+  - component: {fileID: 2095118200}
+  - component: {fileID: 2095118199}
+  m_Layer: 8
+  m_Name: HitBox_Front
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2095118195
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2095118194}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2115835342}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2095118199
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2095118194}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbe7f18f4b1522c4582c62f8be87f16f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackerName: Attacker
+  debugLog: 0
+  drawGizmoAlways: 1
+  drawGizmoWhenSelected: 1
+  gizmoFill: {r: 1, g: 0, b: 0, a: 0.12}
+  gizmoLine: {r: 1, g: 0, b: 0, a: 0.9}
+  gizmoArmedLine: {r: 0.25, g: 1, b: 0.25, a: 1}
+  armed: 0
+  mode: 0
+  tickInterval: 0.2
+  ownerUnit: {fileID: 0}
+  ownerStats: {fileID: 0}
+  damage: 10
+  knockback: {x: 6, y: 2}
+--- !u!61 &2095118200
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2095118194}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 1, y: 1}
+  m_EdgeRadius: 0
 --- !u!1 &2115835335
 GameObject:
   m_ObjectHideFlags: 0
@@ -1337,6 +1438,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1231740909}
+  - {fileID: 2095118195}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2115835343
@@ -1352,6 +1454,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cfg: {fileID: 0}
+  hitbox: {fileID: 2095118199}
 --- !u!114 &2115835344
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1428,7 +1531,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentHealth: 100
-  currentStamina: 100
   MaxHealth:
     base: 5000
     mods: []
@@ -1441,12 +1543,6 @@ MonoBehaviour:
   MaxJumpHeight:
     base: 1
     mods: []
-  StaminaMax:
-    base: 100
-    mods: []
-  StaminaRegenPerSec:
-    base: 0
-    mods: []
   DamageMultiplier:
     base: 1
     mods: []
@@ -1454,13 +1550,10 @@ MonoBehaviour:
     base: 1
     mods: []
   CritChance:
-    base: 0
+    base: 1
     mods: []
   CritDamageMultiplier:
     base: 1.5
-    mods: []
-  DashStaminaCost:
-    base: 100
     mods: []
   IFrameMultiplier:
     base: 1

@@ -52,23 +52,23 @@ public class MoveChaseAction : BTNode
             bb.moveChase = true;
             
             // 상태 변경 시 로그
-            if (!previousChase)
-                Debug.Log($"[BT] MoveChaseAction: 추적 모드 활성화 (거리: {distanceToTarget:F2}, 범위: {minChaseDistance:F2}~{currentDetectionRange:F2})");
+            // if (!previousChase)
+                // Debug.Log($"[BT] MoveChaseAction: 추적 모드 활성화 (거리: {distanceToTarget:F2}, 범위: {minChaseDistance:F2}~{currentDetectionRange:F2})");
             
             return State.Running;
         }
         else
         {
             // 추적 모드 비활성화
-            if (previousChase)
-            {
-                if (bb.moveEvade)
-                    Debug.Log($"[BT] MoveChaseAction: 회피 모드로 인한 추적 모드 비활성화");
-                else if (distanceToTarget <= minChaseDistance)
-                    Debug.Log($"[BT] MoveChaseAction: 타겟과 너무 가까움 - 추적 모드 비활성화 (거리: {distanceToTarget:F2})");
-                else if (distanceToTarget >= currentDetectionRange)
-                    Debug.Log($"[BT] MoveChaseAction: 타겟이 너무 멀어 추적 모드 비활성화 (거리: {distanceToTarget:F2}, 범위: {currentDetectionRange:F2})");
-            }
+            //if (previousChase)
+            //{
+            //    if (bb.moveEvade)
+            //        Debug.Log($"[BT] MoveChaseAction: 회피 모드로 인한 추적 모드 비활성화");
+            //    else if (distanceToTarget <= minChaseDistance)
+            //        Debug.Log($"[BT] MoveChaseAction: 타겟과 너무 가까움 - 추적 모드 비활성화 (거리: {distanceToTarget:F2})");
+            //    else if (distanceToTarget >= currentDetectionRange)
+            //        Debug.Log($"[BT] MoveChaseAction: 타겟이 너무 멀어 추적 모드 비활성화 (거리: {distanceToTarget:F2}, 범위: {currentDetectionRange:F2})");
+            //}
             
             bb.moveChase = false;
             return State.Success;
@@ -123,20 +123,20 @@ public class MoveEvadeAction : BTNode
             bb.moveChase = false;
             
             // 상태 변경 시 로그
-            if (!previousEvade)
-                Debug.Log($"[BT] MoveEvadeAction: 회피 모드 활성화 (거리: {distanceToTarget:F2}, 안전거리: {currentSafeDistance:F2})");
-            if (previousChase)
-                Debug.Log($"[BT] MoveEvadeAction: 추적 모드에서 회피 모드로 전환");
+            //if (!previousEvade)
+            //    Debug.Log($"[BT] MoveEvadeAction: 회피 모드 활성화 (거리: {distanceToTarget:F2}, 안전거리: {currentSafeDistance:F2})");
+            //if (previousChase)
+            //    Debug.Log($"[BT] MoveEvadeAction: 추적 모드에서 회피 모드로 전환");
             
             return State.Running;
         }
         else
         {
             // 안전 거리에 있으면 회피 모드 비활성화
-            if (previousEvade)
-            {
-                Debug.Log($"[BT] MoveEvadeAction: 안전 거리 확보 - 회피 모드 비활성화 (거리: {distanceToTarget:F2}, 안전거리: {currentSafeDistance:F2})");
-            }
+            //if (previousEvade)
+            //{
+            //    Debug.Log($"[BT] MoveEvadeAction: 안전 거리 확보 - 회피 모드 비활성화 (거리: {distanceToTarget:F2}, 안전거리: {currentSafeDistance:F2})");
+            //}
             bb.moveEvade = false;
             return State.Success;
         }
@@ -195,9 +195,9 @@ public class AttackAction : BTNode
             
             // 공격 실행 시 로그
             if (!previousAttack)
-                Debug.Log($"[BT] AttackAction: 공격 실행! (거리: {dist:F2}, 범위: {currentAttackRange:F2})");
+                // Debug.Log($"[BT] AttackAction: 공격 실행! (거리: {dist:F2}, 범위: {currentAttackRange:F2})");
             
-            Debug.Log("Monster attacks target!");
+            // Debug.Log("Monster attacks target!");
             timer = currentCooldown;
             return State.Success;
         }
@@ -205,7 +205,7 @@ public class AttackAction : BTNode
         // 공격 범위 밖이거나 쿨다운 중일 때는 공격 상태 해제
         if (bb.attack)
         {
-            Debug.Log($"[BT] AttackAction: 공격 상태 해제 (거리: {dist:F2}, 범위: {currentAttackRange:F2})");
+            // Debug.Log($"[BT] AttackAction: 공격 상태 해제 (거리: {dist:F2}, 범위: {currentAttackRange:F2})");
         }
         bb.attack = false;
         return State.Running;
