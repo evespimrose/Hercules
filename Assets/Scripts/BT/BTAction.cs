@@ -24,12 +24,12 @@ public class MoveChaseAction : BTNode
     }
     
     // MonsterController의 현재 파라미터들을 가져오는 메소드
-    private (float detectionRange, float minChaseDistance, float stopChaseRange) GetCurrentParameters()
+    private (float chaseStartRange, float minChaseDistance, float stopChaseRange) GetCurrentParameters()
     {
-        float currentDetectionRange = monsterController != null ? monsterController.detectionRange : 8f;
+        float currentChaseStartRange = monsterController != null ? monsterController.chaseStartRange : 3.0f;
         float minChaseDistance = 0.8f;  // 추적 최소 거리는 고정값
         float currentStopChaseRange = monsterController != null ? monsterController.stopChaseRange : 2.1f;
-        return (currentDetectionRange, minChaseDistance, currentStopChaseRange);
+        return (currentChaseStartRange, minChaseDistance, currentStopChaseRange);
     }
 
     public override State Tick()
@@ -44,33 +44,31 @@ public class MoveChaseAction : BTNode
         float distanceToTarget = Vector2.Distance(self.position, bb.target.position);
         
         // MonsterController의 변수들을 실시간으로 참조
-        var (currentDetectionRange, minChaseDistance, currentStopChaseRange) = GetCurrentParameters();
-        
-        // [수정] 추적 중지 범위를 적용하여 비비는 현상 방지
-        // 최소 거리(0.8f) 이상, 추적 중지 범위(stopChaseRange) 이하에서만 추적
-        if (!bb.moveEvade && distanceToTarget > minChaseDistance && distanceToTarget < currentStopChaseRange)
+        var (currentChaseStartRange, minChaseDistance, currentStopChaseRange) = GetCurrentParameters();
+
+        // 히스테리시스 창: stopChaseRange < d <= chaseStartRange 에서만 추적 유지/시작
+        bool isWithinChaseWindow = distanceToTarget > currentStopChaseRange && distanceToTarget <= currentChaseStartRange;
+
+        if (!bb.moveEvade && isWithinChaseWindow && distanceToTarget > minChaseDistance)
         {
             bb.moveChase = true;
-            
-            // 상태 변경 시 로그
             if (!previousChase)
-                Debug.Log($"[BT] MoveChaseAction: 추적 모드 활성화 (거리: {distanceToTarget:F2}, 범위: {minChaseDistance:F2}~{currentStopChaseRange:F2})");
-            
+                Debug.Log($"[BT] MoveChaseAction: 추적 시작 (거리: {distanceToTarget:F2}, 창: {currentStopChaseRange:F2}~{currentChaseStartRange:F2})");
             return State.Running;
         }
         else
         {
-            // 추적 모드 비활성화
             if (previousChase)
             {
                 if (bb.moveEvade)
-                    Debug.Log($"[BT] MoveChaseAction: 회피 모드로 인한 추적 모드 비활성화");
+                    Debug.Log($"[BT] MoveChaseAction: 회피로 추적 종료");
+                else if (distanceToTarget <= currentStopChaseRange)
+                    Debug.Log($"[BT] MoveChaseAction: 추적 종료 범위 도달 ({distanceToTarget:F2} <= {currentStopChaseRange:F2})");
+                else if (distanceToTarget > currentChaseStartRange)
+                    Debug.Log($"[BT] MoveChaseAction: 추적 시작 범위 이탈 ({distanceToTarget:F2} > {currentChaseStartRange:F2})");
                 else if (distanceToTarget <= minChaseDistance)
-                    Debug.Log($"[BT] MoveChaseAction: 타겟과 너무 가까움 - 추적 모드 비활성화 (거리: {distanceToTarget:F2})");
-                else if (distanceToTarget >= currentStopChaseRange)
-                    Debug.Log($"[BT] MoveChaseAction: 추적 중지 범위 도달 - 추적 모드 비활성화 (거리: {distanceToTarget:F2}, 중지범위: {currentStopChaseRange:F2})");
+                    Debug.Log($"[BT] MoveChaseAction: 최소 거리 진입으로 추적 종료 ({distanceToTarget:F2} <= {minChaseDistance:F2})");
             }
-            
             bb.moveChase = false;
             return State.Success;
         }

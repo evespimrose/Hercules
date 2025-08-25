@@ -4,10 +4,10 @@ using UnityEngine;
 using Hercules.StatsSystem;
 
 /// <summary>
-/// Áö¼ÓÇü Æ®¸®°Å È÷Æ®¹Ú½º.
-/// - BT/¾Ö´Ï ÇÁ·¹ÀÓ¿¡¼­ Arm/DisarmÀ¸·Î °ø°Ý È°¼º ±¸°£¸¸ ÄÑ°í ²û
-/// - Arm ½ÃÁ¡¿¡ ÀÌ¹Ì °ãÃÄ ÀÖ¾îµµ 1È¸ Å¸°Ý º¸Àå(hitOnceOnArm)
-/// - CombatMath °æÀ¯(Å©¸®/¹è¼ö/ÀúÇ× ¹Ý¿µ), on-hit ¹öÇÁ(ÃâÇ÷/½ºÅÏ/È÷Æ®½ºÅ¾) ¿É¼Ç Áö¿ø
+/// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Æ®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ®ï¿½Ú½ï¿½.
+/// - BT/ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿ï¿½ï¿½ï¿½ Arm/Disarmï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ È°ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ°ï¿½ ï¿½ï¿½
+/// - Arm ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¹ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö¾îµµ 1È¸ Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(hitOnceOnArm)
+/// - CombatMath ï¿½ï¿½ï¿½ï¿½(Å©ï¿½ï¿½/ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ ï¿½Ý¿ï¿½), on-hit ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½Æ®ï¿½ï¿½Å¾) ï¿½É¼ï¿½ ï¿½ï¿½ï¿½ï¿½
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Collider2D))]
@@ -15,41 +15,41 @@ public class Hitbox : MonoBehaviour
 {
     public enum HitMode { Single, Continuous }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     [Header("Damage")]
-    [Tooltip("±âº» ÇÇÇØ(CombatMathÀÇ baseDamage·Î Àü´Þ)")]
+    [Tooltip("ï¿½âº» ï¿½ï¿½ï¿½ï¿½(CombatMathï¿½ï¿½ baseDamageï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)")]
     public float damage = 10f;
 
-    [Tooltip("³Ë¹é(force´Â X¸¦ »ç¿ë). ¹æÇâÀº (ÇÇ°ÝÀÚ-È÷Æ®¹Ú½º)")]
+    [Tooltip("ï¿½Ë¹ï¿½(forceï¿½ï¿½ Xï¿½ï¿½ ï¿½ï¿½ï¿½). ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (ï¿½Ç°ï¿½ï¿½ï¿½-ï¿½ï¿½Æ®ï¿½Ú½ï¿½)")]
     public Vector2 knockback = new Vector2(6f, 0f);
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     [Header("Runtime (read-only)")]
     [SerializeField] private bool armed = false;
 
-    [Tooltip("Single: ÇÑ ½ºÀ® 1È÷Æ® / Continuous: tick °£°ÝÀ¸·Î ¹Ýº¹ È÷Æ®")]
+    [Tooltip("Single: ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 1ï¿½ï¿½Æ® / Continuous: tick ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ýºï¿½ ï¿½ï¿½Æ®")]
     public HitMode mode = HitMode.Single;
 
-    [Tooltip("Continuous ¸ðµå¿¡¼­ °°Àº ´ë»ó ÀçÅ¸°Ý °£°Ý(ÃÊ)")]
+    [Tooltip("Continuous ï¿½ï¿½å¿¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½)")]
     public float tickInterval = 0.2f;
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     [Header("Owner (runtime set)")]
     public string attackerName = "Attacker";
     public bool debugLog = false;
     public Unit ownerUnit;
-    public StatsBase ownerStats;  // ¾øÀ¸¸é Arm ½Ã ownerUnit¿¡¼­ Ã£À½
+    public StatsBase ownerStats;  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Arm ï¿½ï¿½ ownerUnitï¿½ï¿½ï¿½ï¿½ Ã£ï¿½ï¿½
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     [Header("On-Hit Status (optional)")]
     public bool applyBleeding = false;
-    [Tooltip("ÀÏ¹Ý ÃâÇ÷(ºñ-½ºÅÃ)ÀÇ Áö¼Ó½Ã°£")]
+    [Tooltip("ï¿½Ï¹ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½-ï¿½ï¿½ï¿½ï¿½)ï¿½ï¿½ ï¿½ï¿½ï¿½Ó½Ã°ï¿½")]
     public float bleedingDuration = 2f;
 
     public bool applyBleedingStack = false;
-    [Tooltip("½ºÅÃÇü ÃâÇ÷ÀÇ ½ºÅÃ ¼ö")]
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½")]
     public int bleedingStacks = 1;
-    [Tooltip("½ºÅÃÇü ÃâÇ÷ÀÇ Áö¼Ó½Ã°£")]
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ó½Ã°ï¿½")]
     public float bleedingStackDuration = 3f;
 
     public bool applyStun = false;
@@ -57,16 +57,16 @@ public class Hitbox : MonoBehaviour
 
     public bool applyHitstop = false;
     public float hitstopTime = 0.05f;
-    [Tooltip("È÷Æ®½ºÅ¾ Å¸ÀÓ½ºÄÉÀÏ(0.01~1). 0 ÀÌÇÏ¸é 0.05 »ç¿ë")]
+    [Tooltip("ï¿½ï¿½Æ®ï¿½ï¿½Å¾ Å¸ï¿½Ó½ï¿½ï¿½ï¿½ï¿½ï¿½(0.01~1). 0 ï¿½ï¿½ï¿½Ï¸ï¿½ 0.05 ï¿½ï¿½ï¿½")]
     public float hitstopScale = 0.05f;
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     [Header("Activation")]
-    [Tooltip("Arm() ÇÏ´Â ÇÁ·¹ÀÓ¿¡ ÀÌ¹Ì °ãÃÄÀÖ¾îµµ 1È¸ Å¸°Ý º¸Àå")]
+    [Tooltip("Arm() ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿ï¿½ ï¿½Ì¹ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾îµµ 1È¸ Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½")]
     public bool hitOnceOnArm = true;
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ³»ºÎ »óÅÂ
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     private readonly HashSet<Unit> _hitThisSwing = new HashSet<Unit>();
     private readonly Dictionary<Unit, float> _lastHitAt = new Dictionary<Unit, float>();
 
@@ -74,7 +74,7 @@ public class Hitbox : MonoBehaviour
     private static readonly List<Collider2D> _overlaps = new List<Collider2D>(16);
     private ContactFilter2D _noFilter;
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     void Awake()
     {
         _col = GetComponent<Collider2D>();
@@ -83,16 +83,16 @@ public class Hitbox : MonoBehaviour
 
         _noFilter = new ContactFilter2D
         {
-            useTriggers = true,   // Æ®¸®°Åµµ ½ºÄµ
-            useLayerMask = false  // ·¹ÀÌ¾î ¸ÅÆ®¸¯½º´Â ¹°¸®¿£ÁøÀÌ Ã³¸®
+            useTriggers = true,   // Æ®ï¿½ï¿½ï¿½Åµï¿½ ï¿½ï¿½Äµ
+            useLayerMask = false  // ï¿½ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½Æ®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½
         };
 
-        Disarm(); // ½ÃÀÛ ½Ã ºñ¹«Àå
+        Disarm(); // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     }
 
     // ====== Public API ========================================================
 
-    /// <summary>BT/¾Ö´Ï ÇÁ·¹ÀÓ¿¡¼­ °ø°Ý È°¼º ½ÃÀÛ ½Ã È£Ãâ</summary>
+    /// <summary>BT/ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ È°ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ È£ï¿½ï¿½</summary>
     public void Arm(Unit owner, StatsBase stats, float baseDamage, Vector2 kb, HitMode m)
     {
         ownerUnit = owner;
@@ -104,11 +104,11 @@ public class Hitbox : MonoBehaviour
         _hitThisSwing.Clear();
         armed = true;
 
-        // ÄÑ´Â ÇÁ·¹ÀÓ¿¡ ÀÌ¹Ì °ãÄ£ ´ë»óµµ 1È¸ Å¸°Ý
+        // ï¿½Ñ´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿ï¿½ ï¿½Ì¹ï¿½ ï¿½ï¿½Ä£ ï¿½ï¿½ï¿½ 1È¸ Å¸ï¿½ï¿½
         if (hitOnceOnArm) ImmediateHitScan();
     }
 
-    /// <summary>BT/¾Ö´Ï ÇÁ·¹ÀÓ¿¡¼­ °ø°Ý È°¼º Á¾·á ½Ã È£Ãâ</summary>
+    /// <summary>BT/ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ È°ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ È£ï¿½ï¿½</summary>
     public void Disarm()
     {
         armed = false;
@@ -130,7 +130,7 @@ public class Hitbox : MonoBehaviour
             TryApplyHit(other, respectTick: true);
     }
 
-    // ====== Immediate Scan (Arm½Ã 1È¸) =======================================
+    // ====== Immediate Scan (Armï¿½ï¿½ 1È¸) =======================================
 
     private void ImmediateHitScan()
     {
@@ -141,7 +141,7 @@ public class Hitbox : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             var other = _overlaps[i];
-            // Single ¸ðµå¶ó¸é _hitThisSwingÀ¸·Î Áßº¹ ¹æÁö
+            // Single ï¿½ï¿½ï¿½ï¿½ï¿½ _hitThisSwingï¿½ï¿½ï¿½ï¿½ ï¿½ßºï¿½ ï¿½ï¿½ï¿½ï¿½
             TryApplyHit(other, respectTick: false);
         }
     }
@@ -150,24 +150,24 @@ public class Hitbox : MonoBehaviour
 
     private bool TryApplyHit(Collider2D other, bool respectTick)
     {
-        // 1) ´ë»ó Unit Ã£±â(³Ð°Ô)
+        // 1) ï¿½ï¿½ï¿½ Unit Ã£ï¿½ï¿½(ï¿½Ð°ï¿½)
         Unit targetUnit =
                other.GetComponentInParent<Unit>()
             ?? other.GetComponent<Unit>()
             ?? other.GetComponentInChildren<Unit>();
 
         if (targetUnit == null) return false;
-        if (ownerUnit != null && targetUnit == ownerUnit) return false; // ÀÚ±â ÀÚ½Å Á¦¿Ü
+        if (ownerUnit != null && targetUnit == ownerUnit) return false; // ï¿½Ú±ï¿½ ï¿½Ú½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
-        // Single: °°Àº ½ºÀ® Áß Áßº¹ ¹æÁö
+        // Single: ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ßºï¿½ ï¿½ï¿½ï¿½ï¿½
         if (mode == HitMode.Single && _hitThisSwing.Contains(targetUnit))
             return false;
 
-        // Continuous: Æ½ °£°Ý
+        // Continuous: Æ½ ï¿½ï¿½ï¿½ï¿½
         if (respectTick && _lastHitAt.TryGetValue(targetUnit, out float last))
             if (Time.time - last < tickInterval) return false;
 
-        // 2) °ø°Ý/¹æ¾î ½ºÅÈ
+        // 2) ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         StatsBase atkStats =
               ownerStats
            ?? ownerUnit?.GetComponentInParent<StatsBase>()
@@ -177,7 +177,7 @@ public class Hitbox : MonoBehaviour
               targetUnit.GetComponentInParent<StatsBase>()
            ?? targetUnit.GetComponentInChildren<StatsBase>();
 
-        // 3) ÃÖÁ¾ µ¥¹ÌÁö + Å©¸® ¿©ºÎ
+        // 3) ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ + Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         bool isCrit = false;
         float finalDamage =
             (atkStats != null && defStats != null)
@@ -185,16 +185,16 @@ public class Hitbox : MonoBehaviour
                 : damage;
 
         if (isCrit)
-            Debug.Log("Ä¡¡Ú¸í¡ÚÅ¸ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            Debug.Log("Ä¡ï¿½Ú¸ï¿½ï¿½Å¸ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
-        // 4) ÇÇÇØ/³Ë¹é Àû¿ë
+        // 4) ï¿½ï¿½ï¿½ï¿½/ï¿½Ë¹ï¿½ ï¿½ï¿½ï¿½ï¿½
         targetUnit.Damage(finalDamage, ownerUnit);
 
         Vector2 dir = ((Vector2)other.transform.position - (Vector2)transform.position).normalized;
         float force = knockback.x;
         if (force > 0f) targetUnit.ApplyKnockback(dir, force);
 
-        // 5) on-hit ¹öÇÁ (¿É¼Ç)
+        // 5) on-hit ï¿½ï¿½ï¿½ï¿½ (ï¿½É¼ï¿½)
         if (applyBleeding && bleedingDuration > 0f)
             targetUnit.Mesmerize(bleedingDuration, Unit.Buff.Bleeding);
 
@@ -210,7 +210,7 @@ public class Hitbox : MonoBehaviour
         if (debugLog)
             Debug.Log($"[HIT] {attackerName} -> {other.name} dmg={finalDamage}");
 
-        // 6) Ã¥°¥ÇÇ
+        // 6) Ã¥ï¿½ï¿½ï¿½ï¿½
         _hitThisSwing.Add(targetUnit);
         _lastHitAt[targetUnit] = Time.time;
 

@@ -18,19 +18,21 @@ public class MonsterController : MonoBehaviour
     [Range(0.1f, 5f)]
     public float attackCooldown = 1f;
     [Range(0.1f, 5f)]
-    public float stopChaseRange = 2.1f;  // 추적을 멈추고 서는 범위 (공격 범위보다 약간 작게)
+    public float stopChaseRange = 2.1f;  // 추적 종료 범위 (공격 범위보다 약간 작게)
     
     [Header("AI Settings")]
     [Range(1f, 20f)]
     public float detectionRange = 8f;
     [Range(0.5f, 10f)]
     public float safeDistance = 4f;
+    [Range(0.1f, 20f)]
+    public float chaseStartRange = 3.0f; // 추적 시작 범위
     
     [Header("Gizmo Settings")]
     [SerializeField] private bool showGizmos = true;
     [SerializeField] private Color chaseRangeColor = Color.blue;
     [SerializeField] private Color attackRangeColor = Color.red;
-    [SerializeField] private Color stopChaseRangeColor = Color.orange;  // 추적 중지 범위 색상 추가
+    [SerializeField] private Color stopChaseRangeColor = Color.cyan;  // 추적 중지 범위 색상 추가
     [SerializeField] private Color evadeRangeColor = Color.yellow;
     [SerializeField] private Color detectionRangeColor = Color.green;
     
@@ -280,8 +282,23 @@ public class MonsterController : MonoBehaviour
     // [추가] 공격 범위 설정 메서드 (추적 중지 범위와의 관계 유지)
     public void SetAttackRange(float range)
     {
-        attackRange = Mathf.Max(range, stopChaseRange + 0.1f); // 추적 중지 범위보다 크게 제한
+        // stopChaseRange보다 크고 chaseStartRange보다 작도록 Clamp
+        float min = stopChaseRange + 0.1f;
+        float max = chaseStartRange - 0.1f;
+        if (max < min) max = min + 0.1f;
+        attackRange = Mathf.Clamp(range, min, max);
         Debug.Log($"[{name}] 공격 범위 변경: {attackRange:F2}");
+    }
+
+    // [추가] 추적 시작 범위 설정 메서드 (관계 보존)
+    public void SetChaseStartRange(float range)
+    {
+        // attackRange보다 크고 detectionRange보다 작도록 Clamp
+        float min = attackRange + 0.1f;
+        float max = detectionRange;
+        if (max < min) max = min + 0.1f;
+        chaseStartRange = Mathf.Clamp(range, min, max);
+        Debug.Log($"[{name}] 추적 시작 범위 변경: {chaseStartRange:F2}");
     }
     
     // BT 상태를 외부에서 설정할 수 있는 메서드들
@@ -323,9 +340,9 @@ public class MonsterController : MonoBehaviour
         Gizmos.color = evadeRangeColor;
         Gizmos.DrawWireSphere(center, safeDistance);
         
-        // 추적 최소 거리 (0.8f)
+        // 추적 시작 범위 (chaseStartRange)
         Gizmos.color = chaseRangeColor;
-        Gizmos.DrawWireSphere(center, 0.8f);
+        Gizmos.DrawWireSphere(center, chaseStartRange);
         
         // 타겟이 있을 때 방향 표시
         if (target != null)
@@ -366,8 +383,8 @@ public class MonsterController : MonoBehaviour
         Gizmos.color = new Color(evadeRangeColor.r, evadeRangeColor.g, evadeRangeColor.b, 0.1f);
         Gizmos.DrawSphere(center, safeDistance);
         
-        // 추적 최소 거리
+        // 추적 시작 범위
         Gizmos.color = new Color(chaseRangeColor.r, chaseRangeColor.g, chaseRangeColor.b, 0.1f);
-        Gizmos.DrawSphere(center, 0.8f);
+        Gizmos.DrawSphere(center, chaseStartRange);
     }
 }

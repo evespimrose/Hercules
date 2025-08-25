@@ -907,13 +907,16 @@ MonoBehaviour:
   moveSpeed: 3
   chaseSpeed: 4
   evadeSpeed: 4
-  attackRange: 1.5
+  attackRange: 2.2
   attackCooldown: 1
+  stopChaseRange: 2.1
   detectionRange: 8
   safeDistance: 4
+  chaseStartRange: 3
   showGizmos: 1
   chaseRangeColor: {r: 0, g: 0, b: 1, a: 1}
   attackRangeColor: {r: 1, g: 0, b: 0, a: 1}
+  stopChaseRangeColor: {r: 0, g: 1, b: 1, a: 1}
   evadeRangeColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   detectionRangeColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &1542632298

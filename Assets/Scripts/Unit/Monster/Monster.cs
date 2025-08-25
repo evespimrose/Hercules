@@ -136,23 +136,23 @@ public class Monster : Unit, IHitReceiver
 
         hitReceiver.ReceiveHit(finalDamage, knockbackForce, contactPoint);
         Debug.Log($"{name} attacked {hitReceiver.GetType().Name} for {finalDamage} dmg");
-        // [수정] 충돌 공격은 비활성화하여 BT 공격과의 중복 방지
-        // 대신 밀어내기 효과만 적용
+        //// [수정] 충돌 공격은 비활성화하여 BT 공격과의 중복 방지
+        //// 대신 밀어내기 효과만 적용
         
-        if (hitReceiver != null)
-        {
-            // 넉백 방향 계산 (몬스터에서 타겟으로)
-            Vector2 knockbackDirection = (contactPoint - (Vector2)transform.position).normalized;
-            Vector2 knockbackForce = knockbackDirection * 3f; // 밀어내기 세기 (공격보다 약하게)
+        //if (hitReceiver != null)
+        //{
+        //    // 넉백 방향 계산 (몬스터에서 타겟으로)
+        //    Vector2 knockbackDirection = (contactPoint - (Vector2)transform.position).normalized;
+        //    Vector2 knockbackForce = knockbackDirection * 3f; // 밀어내기 세기 (공격보다 약하게)
             
-            // IHitReceiver의 ReceiveHit 호출 (데미지는 0으로 설정)
-            hitReceiver.ReceiveHit(0f, knockbackForce, contactPoint);
+        //    // IHitReceiver의 ReceiveHit 호출 (데미지는 0으로 설정)
+        //    hitReceiver.ReceiveHit(0f, knockbackForce, contactPoint);
             
-            Debug.Log($"[{name}] 충돌 밀어내기 효과 적용 (데미지 없음) - {hitReceiver.GetType().Name}에게 밀어내기");
-        }
+        //    Debug.Log($"[{name}] 충돌 밀어내기 효과 적용 (데미지 없음) - {hitReceiver.GetType().Name}에게 밀어내기");
+        //}
         
-        // [참고] 실제 공격은 BT의 AttackAction에서 처리됨
-        // 이 메서드는 충돌 시 밀어내기 효과만 담당
+        //// [참고] 실제 공격은 BT의 AttackAction에서 처리됨
+        //// 이 메서드는 충돌 시 밀어내기 효과만 담당
     }
     
     void ProcessHitboxCollision(Hitbox hitbox, Vector2 contactPoint)
@@ -182,12 +182,12 @@ public class Monster : Unit, IHitReceiver
         }
     }
 
-    // 유닛 간 충돌 시 약간 밀어내기
-    private void ProcessUnitCollision(Unit otherUnit, Vector2 contactPoint)
-    {
-        Vector2 pushDirection = (transform.position - otherUnit.transform.position).normalized;
-        rb.AddForce(pushDirection * 1f, ForceMode2D.Impulse);
-    }
+    //// 유닛 간 충돌 시 약간 밀어내기
+    //private void ProcessUnitCollision(Unit otherUnit, Vector2 contactPoint)
+    //{
+    //    Vector2 pushDirection = (transform.position - otherUnit.transform.position).normalized;
+    //    rb.AddForce(pushDirection * 1f, ForceMode2D.Impulse);
+    //}
 
     // ─────────────────────────────────────────────────────────────
     // IHitReceiver
