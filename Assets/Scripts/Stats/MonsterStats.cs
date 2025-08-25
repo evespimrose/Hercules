@@ -13,6 +13,8 @@ namespace Hercules.StatsSystem
         {
             base.Awake();
             HookOnChanged(AggroRange, EnrageMultiplier);
+
+            CritChance.Base = 1f;  // 25%
         }
 
         public override void RecomputeDerived()

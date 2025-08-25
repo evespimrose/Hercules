@@ -4,259 +4,216 @@ using UnityEngine;
 using Hercules.StatsSystem;
 
 /// <summary>
-/// »ó½Ã º¸À¯ÇÏ´Â °ø°Ý ÆÇÁ¤ ÄÄÆ÷³ÍÆ®.
-/// - Æò¼Ò¿£ Disarm »óÅÂ(armed=false, Collider.enabled=false)
-/// - °ø°Ý/½ºÅ³ÀÇ ¾×Æ¼ºê ±¸°£¿¡¸¸ Arm(...)À¸·Î ¹«Àå & On/Off
-/// - Mode.Single : OnTriggerEnter·Î 1È¸ Å¸°Ý
-/// - Mode.Continuous : OnTriggerStay·Î tickInterval¸¶´Ù ÁÖ±â Å¸°Ý
-/// - ÃÖÁ¾ µ¥¹ÌÁö´Â CombatMath¿¡¼­ °è»ê(ÇöÀç´Â baseDamage Åë°ú)
-/// + Gizmo: È÷Æ® ¹üÀ§ ½Ã°¢È­ Áö¿ø
+/// Áö¼ÓÇü Æ®¸®°Å È÷Æ®¹Ú½º.
+/// - BT/¾Ö´Ï ÇÁ·¹ÀÓ¿¡¼­ Arm/DisarmÀ¸·Î °ø°Ý È°¼º ±¸°£¸¸ ÄÑ°í ²û
+/// - Arm ½ÃÁ¡¿¡ ÀÌ¹Ì °ãÃÄ ÀÖ¾îµµ 1È¸ Å¸°Ý º¸Àå(hitOnceOnArm)
+/// - CombatMath °æÀ¯(Å©¸®/¹è¼ö/ÀúÇ× ¹Ý¿µ), on-hit ¹öÇÁ(ÃâÇ÷/½ºÅÏ/È÷Æ®½ºÅ¾) ¿É¼Ç Áö¿ø
 /// </summary>
+[DisallowMultipleComponent]
 [RequireComponent(typeof(Collider2D))]
 public class Hitbox : MonoBehaviour
 {
     public enum HitMode { Single, Continuous }
 
-    [Header("Debug")]
+    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    [Header("Damage")]
+    [Tooltip("±âº» ÇÇÇØ(CombatMathÀÇ baseDamage·Î Àü´Þ)")]
+    public float damage = 10f;
+
+    [Tooltip("³Ë¹é(force´Â X¸¦ »ç¿ë). ¹æÇâÀº (ÇÇ°ÝÀÚ-È÷Æ®¹Ú½º)")]
+    public Vector2 knockback = new Vector2(6f, 0f);
+
+    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    [Header("Runtime (read-only)")]
+    [SerializeField] private bool armed = false;
+
+    [Tooltip("Single: ÇÑ ½ºÀ® 1È÷Æ® / Continuous: tick °£°ÝÀ¸·Î ¹Ýº¹ È÷Æ®")]
+    public HitMode mode = HitMode.Single;
+
+    [Tooltip("Continuous ¸ðµå¿¡¼­ °°Àº ´ë»ó ÀçÅ¸°Ý °£°Ý(ÃÊ)")]
+    public float tickInterval = 0.2f;
+
+    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    [Header("Owner (runtime set)")]
     public string attackerName = "Attacker";
     public bool debugLog = false;
-
-    [Header("Gizmo")]
-    public bool drawGizmoAlways = true;            // ¾À¿¡¼­ Ç×»ó Ç¥½Ã
-    public bool drawGizmoWhenSelected = true;      // ¼±ÅÃ ½Ã Ç¥½Ã
-    public Color gizmoFill = new Color(1f, 0f, 0f, 0.12f);
-    public Color gizmoLine = new Color(1f, 0f, 0f, 0.9f);
-    public Color gizmoArmedLine = new Color(0.25f, 1f, 0.25f, 1f);
-
-    [Header("Runtime (read-only)")]
-    public bool armed;
-    public HitMode mode = HitMode.Single;
-    public float tickInterval = 0.2f; // ContinuousÀÏ ¶§¸¸ »ç¿ë
-
-    // °ø°ÝÀÚ/±âº» ÆÄ¶ó¹ÌÅÍ(ArmÀ¸·Î ÁÖÀÔ)
     public Unit ownerUnit;
-    public StatsBase ownerStats;
-    public float damage = 10f;          // base damage (½Â¼ö´Â CombatMath¿¡ À§ÀÓ ±ÇÀå)
-    public Vector2 knockback = new Vector2(6f, 2f);
+    public StatsBase ownerStats;  // ¾øÀ¸¸é Arm ½Ã ownerUnit¿¡¼­ Ã£À½
 
-    // ¿ÜºÎ ÈÅ(ÀÌÆåÆ®/»ç¿îµå µî)
-    public event Action<Collider2D, float> OnHit;
+    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    [Header("On-Hit Status (optional)")]
+    public bool applyBleeding = false;
+    [Tooltip("ÀÏ¹Ý ÃâÇ÷(ºñ-½ºÅÃ)ÀÇ Áö¼Ó½Ã°£")]
+    public float bleedingDuration = 2f;
 
+    public bool applyBleedingStack = false;
+    [Tooltip("½ºÅÃÇü ÃâÇ÷ÀÇ ½ºÅÃ ¼ö")]
+    public int bleedingStacks = 1;
+    [Tooltip("½ºÅÃÇü ÃâÇ÷ÀÇ Áö¼Ó½Ã°£")]
+    public float bleedingStackDuration = 3f;
+
+    public bool applyStun = false;
+    public float stunTime = 0.4f;
+
+    public bool applyHitstop = false;
+    public float hitstopTime = 0.05f;
+    [Tooltip("È÷Æ®½ºÅ¾ Å¸ÀÓ½ºÄÉÀÏ(0.01~1). 0 ÀÌÇÏ¸é 0.05 »ç¿ë")]
+    public float hitstopScale = 0.05f;
+
+    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    [Header("Activation")]
+    [Tooltip("Arm() ÇÏ´Â ÇÁ·¹ÀÓ¿¡ ÀÌ¹Ì °ãÃÄÀÖ¾îµµ 1È¸ Å¸°Ý º¸Àå")]
+    public bool hitOnceOnArm = true;
+
+    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
     // ³»ºÎ »óÅÂ
-    Collider2D col;
-    readonly HashSet<Unit> _hitOnce = new HashSet<Unit>();
-    // Continuous ¸ðµå: À¯´Öº° ¸¶Áö¸· Å¸°Ý ½Ã°£ ¡æ tickInterval¸¶´Ù 1È¸
-    readonly Dictionary<Unit, float> _lastHitAt = new Dictionary<Unit, float>();
+    private readonly HashSet<Unit> _hitThisSwing = new HashSet<Unit>();
+    private readonly Dictionary<Unit, float> _lastHitAt = new Dictionary<Unit, float>();
 
-    void Reset()
-    {
-        col = GetComponent<Collider2D>();
-        if (col) col.isTrigger = true;
-    }
+    private Collider2D _col;
+    private static readonly List<Collider2D> _overlaps = new List<Collider2D>(16);
+    private ContactFilter2D _noFilter;
 
+    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
     void Awake()
     {
-        col = GetComponent<Collider2D>();
-        if (col == null) col = gameObject.AddComponent<BoxCollider2D>();
-        col.isTrigger = true;
-        Disarm(); // ½ÃÀÛÀº ºñ¹«Àå
+        _col = GetComponent<Collider2D>();
+        if (_col == null) _col = gameObject.AddComponent<BoxCollider2D>();
+        _col.isTrigger = true;
+
+        _noFilter = new ContactFilter2D
+        {
+            useTriggers = true,   // Æ®¸®°Åµµ ½ºÄµ
+            useLayerMask = false  // ·¹ÀÌ¾î ¸ÅÆ®¸¯½º´Â ¹°¸®¿£ÁøÀÌ Ã³¸®
+        };
+
+        Disarm(); // ½ÃÀÛ ½Ã ºñ¹«Àå
     }
 
-    void OnEnable() { _lastHitAt.Clear(); }
-    void OnDisable() { _lastHitAt.Clear(); }
+    // ====== Public API ========================================================
 
-    /// <summary>¾×Æ¼ºê ±¸°£ ½ÃÀÛ ½Ã È£Ãâ.</summary>
-    public void Arm(Unit owner, StatsBase stats, float baseDamage, Vector2 kb, HitMode m, float tick = 0.2f)
+    /// <summary>BT/¾Ö´Ï ÇÁ·¹ÀÓ¿¡¼­ °ø°Ý È°¼º ½ÃÀÛ ½Ã È£Ãâ</summary>
+    public void Arm(Unit owner, StatsBase stats, float baseDamage, Vector2 kb, HitMode m)
     {
         ownerUnit = owner;
         ownerStats = stats;
         damage = baseDamage;
         knockback = kb;
         mode = m;
-        tickInterval = Mathf.Max(0.01f, tick);
 
+        _hitThisSwing.Clear();
         armed = true;
 
-        // ½ºÀ® ½ÃÀÛ ½Ã ÃÊ±âÈ­
-        _hitOnce.Clear();
-        _lastHitAt.Clear();
-
-        if (col) col.enabled = true;
+        // ÄÑ´Â ÇÁ·¹ÀÓ¿¡ ÀÌ¹Ì °ãÄ£ ´ë»óµµ 1È¸ Å¸°Ý
+        if (hitOnceOnArm) ImmediateHitScan();
     }
 
+    /// <summary>BT/¾Ö´Ï ÇÁ·¹ÀÓ¿¡¼­ °ø°Ý È°¼º Á¾·á ½Ã È£Ãâ</summary>
     public void Disarm()
     {
         armed = false;
-
-        // ½ºÀ® Á¾·á ½Ãµµ Á¤¸®
-        _hitOnce.Clear();
-        _lastHitAt.Clear();
-
-        if (col) col.enabled = false;
+        _hitThisSwing.Clear();
     }
 
+    // ====== Physics ===========================================================
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.GetComponent<Hitbox>() != null)
-            return;
-
         if (!armed) return;
-
-        if (mode == HitMode.Single)
-            TryApplyHit(other, /*respectTick*/ false);
-        else // Continuous
-            TryApplyHit(other, /*respectTick*/ true); // ÁøÀÔ ½Ã 1È¸(¼±ÅÃ)
+        TryApplyHit(other, respectTick: mode == HitMode.Continuous);
     }
 
-    void OnTriggerStay2D(Collider2D other)              // È®Àå¼º »ý°¢ÇØ¼­ ¹Ì¸® Ãß°¡ÇØµÒ(Áöµô È¤Àº ÀåÆÇ¿ë)
+    void OnTriggerStay2D(Collider2D other)
     {
-        if (!armed || mode != HitMode.Continuous) return;
-        TryApplyHit(other, /*respectTick*/ true); // Æ½ °£°Ý Àû¿ë
+        if (!armed) return;
+        if (mode == HitMode.Continuous)
+            TryApplyHit(other, respectTick: true);
     }
 
-    bool TryApplyHit(Collider2D other, bool respectTick)
+    // ====== Immediate Scan (Arm½Ã 1È¸) =======================================
+
+    private void ImmediateHitScan()
     {
-        // 1) ´ë»ó Unit
-        var targetUnit =
+        if (_col == null) return;
+
+        _overlaps.Clear();
+        int count = _col.OverlapCollider(_noFilter, _overlaps);
+        for (int i = 0; i < count; i++)
+        {
+            var other = _overlaps[i];
+            // Single ¸ðµå¶ó¸é _hitThisSwingÀ¸·Î Áßº¹ ¹æÁö
+            TryApplyHit(other, respectTick: false);
+        }
+    }
+
+    // ====== Core =============================================================
+
+    private bool TryApplyHit(Collider2D other, bool respectTick)
+    {
+        // 1) ´ë»ó Unit Ã£±â(³Ð°Ô)
+        Unit targetUnit =
                other.GetComponentInParent<Unit>()
             ?? other.GetComponent<Unit>()
             ?? other.GetComponentInChildren<Unit>();
+
         if (targetUnit == null) return false;
-        if (ownerUnit != null && targetUnit == ownerUnit) return false; // ÀÚ±â ÀÚ½Å ¹«½Ã
+        if (ownerUnit != null && targetUnit == ownerUnit) return false; // ÀÚ±â ÀÚ½Å Á¦¿Ü
 
-        // ´Ü¹ß ¸ðµå: ÇÑ ½ºÀ® 1È÷Æ® º¸Àå (¸ÖÆ¼ ÄÝ¶óÀÌ´õ/Áßº¹ Enter ¹æÁö)
-        if (mode == HitMode.Single)
-        {
-            if (_hitOnce.Contains(targetUnit)) return false;
-            _hitOnce.Add(targetUnit);
-        }
+        // Single: °°Àº ½ºÀ® Áß Áßº¹ ¹æÁö
+        if (mode == HitMode.Single && _hitThisSwing.Contains(targetUnit))
+            return false;
 
-        // 2) Áö¼ÓÇü Æ½ °£°Ý
-        if (respectTick)
-        {
-            if (_lastHitAt.TryGetValue(targetUnit, out float last))
-                if (Time.time - last < tickInterval) return false;
-        }
+        // Continuous: Æ½ °£°Ý
+        if (respectTick && _lastHitAt.TryGetValue(targetUnit, out float last))
+            if (Time.time - last < tickInterval) return false;
 
-        // 3) °ø°Ý/¹æ¾î Stats È®º¸(³Ð°Ô)
+        // 2) °ø°Ý/¹æ¾î ½ºÅÈ
         StatsBase atkStats =
-            ownerStats
-            ?? ownerUnit?.GetComponent<StatsBase>()
-            ?? ownerUnit?.GetComponentInChildren<StatsBase>()
-            ?? ownerUnit?.GetComponentInParent<StatsBase>();
+              ownerStats
+           ?? ownerUnit?.GetComponentInParent<StatsBase>()
+           ?? ownerUnit?.GetComponentInChildren<StatsBase>();
 
         StatsBase defStats =
-            targetUnit.GetComponent<StatsBase>()
-            ?? targetUnit.GetComponentInChildren<StatsBase>()
-            ?? targetUnit.GetComponentInParent<StatsBase>();
+              targetUnit.GetComponentInParent<StatsBase>()
+           ?? targetUnit.GetComponentInChildren<StatsBase>();
 
-        // 4) ÃÖÁ¾ µ¥¹ÌÁö + Å©¸® ¿©ºÎ
+        // 3) ÃÖÁ¾ µ¥¹ÌÁö + Å©¸® ¿©ºÎ
         bool isCrit = false;
-        float finalDamage;
-        if (atkStats != null && defStats != null)
-        {
-            finalDamage = CombatMath.ComputeDamage(atkStats, defStats, damage, out isCrit);
-        }
-        else
-        {
-            if (debugLog)
-                Debug.LogWarning($"[Hitbox] CombatMath skipped. atkStats={(atkStats != null)}, defStats={(defStats != null)}. base={damage}");
-            finalDamage = damage;
-        }
+        float finalDamage =
+            (atkStats != null && defStats != null)
+                ? CombatMath.ComputeDamage(atkStats, defStats, damage, out isCrit)
+                : damage;
 
-        // 5) Å©¸® ·Î±×
         if (isCrit)
             Debug.Log("Ä¡¡Ú¸í¡ÚÅ¸ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        else if (debugLog)
-        {
-            float cc = atkStats ? Mathf.Clamp01(atkStats.CritChance.Value) : -1f;
-            Debug.Log($"[Hitbox] non-crit hit. critChance={cc}, finalDamage={finalDamage}");
-        }
 
-        // 6) µ¥¹ÌÁö/³Ë¹é Àû¿ë
+        // 4) ÇÇÇØ/³Ë¹é Àû¿ë
         targetUnit.Damage(finalDamage, ownerUnit);
 
         Vector2 dir = ((Vector2)other.transform.position - (Vector2)transform.position).normalized;
         float force = knockback.x;
         if (force > 0f) targetUnit.ApplyKnockback(dir, force);
 
-        if (debugLog) Debug.Log($"[HIT] {attackerName} -> {other.name} dmg={finalDamage}");
+        // 5) on-hit ¹öÇÁ (¿É¼Ç)
+        if (applyBleeding && bleedingDuration > 0f)
+            targetUnit.Mesmerize(bleedingDuration, Unit.Buff.Bleeding);
 
-        _lastHitAt[targetUnit] = Time.time; // Áö¼ÓÇü¿ë ±â·Ï
-        OnHit?.Invoke(other, finalDamage);
+        if (applyBleedingStack && bleedingStackDuration > 0f && bleedingStacks > 0)
+            targetUnit.Mesmerize(bleedingStackDuration, Unit.Buff.BleedingStack, magnitude: bleedingStacks);
+
+        if (applyStun && stunTime > 0f)
+            targetUnit.Mesmerize(stunTime, Unit.Buff.Stun);
+
+        if (applyHitstop && hitstopTime > 0f)
+            targetUnit.Mesmerize(hitstopTime, Unit.Buff.Hitstop, magnitude: hitstopScale);
+
+        if (debugLog)
+            Debug.Log($"[HIT] {attackerName} -> {other.name} dmg={finalDamage}");
+
+        // 6) Ã¥°¥ÇÇ
+        _hitThisSwing.Add(targetUnit);
+        _lastHitAt[targetUnit] = Time.time;
+
         return true;
     }
-
-
-
-
-
-#if UNITY_EDITOR
-    // ¦¡¦¡ Gizmo: È÷Æ® ¹üÀ§ ½Ã°¢È­ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    void DrawBoxGizmo(BoxCollider2D box, Color line, Color fill)
-    {
-        if (!box) return;
-        var prev = Gizmos.matrix;
-        Gizmos.matrix = transform.localToWorldMatrix;
-
-        Vector3 center = (Vector3)box.offset;
-        Vector3 size = (Vector3)box.size;
-        size.z = 0.01f;
-
-        // Ã¤¿ò
-        Gizmos.color = fill;
-        Gizmos.DrawCube(center, size);
-        // ¿Ü°û¼±
-        Gizmos.color = line;
-        Gizmos.DrawWireCube(center, size);
-
-        Gizmos.matrix = prev;
-    }
-
-    void DrawCircleGizmo(CircleCollider2D c, Color line, Color fill)
-    {
-        if (!c) return;
-        var prev = Gizmos.matrix;
-        Gizmos.matrix = transform.localToWorldMatrix;
-        Vector3 center = (Vector3)c.offset;
-        float r = c.radius;
-
-        Gizmos.color = fill;
-        Gizmos.DrawSphere(center, 0.001f); // ¾ãÀº Ã¤¿ò ´ë¿ë
-        // ¿¡µðÅÍ Àü¿ë ¿ø
-        UnityEditor.Handles.color = line;
-        UnityEditor.Handles.DrawWireDisc(center, Vector3.forward, r);
-
-        Gizmos.matrix = prev;
-    }
-
-    void OnDrawGizmos()
-    {
-        if (!drawGizmoAlways) return;
-        var line = armed ? gizmoArmedLine : gizmoLine;
-
-        if (TryGetComponent(out BoxCollider2D box)) { DrawBoxGizmo(box, line, gizmoFill); return; }
-        if (TryGetComponent(out CircleCollider2D cir)) { DrawCircleGizmo(cir, line, gizmoFill); return; }
-        if (TryGetComponent(out CapsuleCollider2D cap))
-        {
-            // Ä¸½¶Àº ´ë·«ÀûÀÎ ¹Ú½º·Î Ç¥½Ã
-            var prev = Gizmos.matrix;
-            Gizmos.matrix = transform.localToWorldMatrix;
-            Vector3 center = (Vector3)cap.offset;
-            Vector3 size = new Vector3(cap.size.x, cap.size.y, 0.01f);
-            Gizmos.color = gizmoFill; Gizmos.DrawCube(center, size);
-            Gizmos.color = line; Gizmos.DrawWireCube(center, size);
-            Gizmos.matrix = prev;
-        }
-    }
-
-    void OnDrawGizmosSelected()
-    {
-        if (!drawGizmoWhenSelected || drawGizmoAlways) return;
-        OnDrawGizmos();
-    }
-#endif
 }
-
-
