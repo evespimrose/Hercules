@@ -113,21 +113,23 @@ public class Monster : Unit, IHitReceiver
     
     void ProcessAttackCollision(IHitReceiver hitReceiver, Vector2 contactPoint)
     {
-        // 몬스터가 공격할 때의 처리
-        if (canAttack && hitReceiver != null)
+        // [수정] 충돌 공격은 비활성화하여 BT 공격과의 중복 방지
+        // 대신 밀어내기 효과만 적용
+        
+        if (hitReceiver != null)
         {
-            // 공격 데미지 계산
-            float attackDamage = 10f; // 기본 공격력
-            
             // 넉백 방향 계산 (몬스터에서 타겟으로)
             Vector2 knockbackDirection = (contactPoint - (Vector2)transform.position).normalized;
-            Vector2 knockbackForce = knockbackDirection * 5f; // 넉백 세기
+            Vector2 knockbackForce = knockbackDirection * 3f; // 밀어내기 세기 (공격보다 약하게)
             
-            // IHitReceiver의 ReceiveHit 호출
-            hitReceiver.ReceiveHit(attackDamage, knockbackForce, contactPoint);
+            // IHitReceiver의 ReceiveHit 호출 (데미지는 0으로 설정)
+            hitReceiver.ReceiveHit(0f, knockbackForce, contactPoint);
             
-            Debug.Log($"{name}이(가) {hitReceiver.GetType().Name}을(를) 공격했습니다!");
+            Debug.Log($"[{name}] 충돌 밀어내기 효과 적용 (데미지 없음) - {hitReceiver.GetType().Name}에게 밀어내기");
         }
+        
+        // [참고] 실제 공격은 BT의 AttackAction에서 처리됨
+        // 이 메서드는 충돌 시 밀어내기 효과만 담당
     }
     
     void ProcessHitboxCollision(Hitbox hitbox, Vector2 contactPoint)
@@ -207,8 +209,8 @@ public class Monster : Unit, IHitReceiver
     // Rigidbody2D 접근자
     public Rigidbody2D Rigidbody => rb;
     
-    // 공격 가능 여부 (충돌 처리에서 사용)
-    private bool canAttack => true; // 임시, 나중에 공격 쿨다운 등으로 개선
+    // [수정] 공격 가능 여부는 BT와 MonsterController에서 관리
+    // 충돌 공격은 비활성화되어 BT 공격만 사용됨
     
     // 충돌 반지름 접근자
     public float CollisionRadius => collisionRadius;

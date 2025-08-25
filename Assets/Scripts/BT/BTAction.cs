@@ -24,11 +24,12 @@ public class MoveChaseAction : BTNode
     }
     
     // MonsterController의 현재 파라미터들을 가져오는 메소드
-    private (float detectionRange, float minChaseDistance) GetCurrentParameters()
+    private (float detectionRange, float minChaseDistance, float stopChaseRange) GetCurrentParameters()
     {
         float currentDetectionRange = monsterController != null ? monsterController.detectionRange : 8f;
         float minChaseDistance = 0.8f;  // 추적 최소 거리는 고정값
-        return (currentDetectionRange, minChaseDistance);
+        float currentStopChaseRange = monsterController != null ? monsterController.stopChaseRange : 2.1f;
+        return (currentDetectionRange, minChaseDistance, currentStopChaseRange);
     }
 
     public override State Tick()
@@ -43,17 +44,17 @@ public class MoveChaseAction : BTNode
         float distanceToTarget = Vector2.Distance(self.position, bb.target.position);
         
         // MonsterController의 변수들을 실시간으로 참조
-        var (currentDetectionRange, minChaseDistance) = GetCurrentParameters();
+        var (currentDetectionRange, minChaseDistance, currentStopChaseRange) = GetCurrentParameters();
         
-        // 회피 모드가 아닐 때만 추적 모드 활성화
-        // 최소 거리(0.8f) 이상, 최대 거리(detectionRange) 이하에서만 추적
-        if (!bb.moveEvade && distanceToTarget > minChaseDistance && distanceToTarget < currentDetectionRange)
+        // [수정] 추적 중지 범위를 적용하여 비비는 현상 방지
+        // 최소 거리(0.8f) 이상, 추적 중지 범위(stopChaseRange) 이하에서만 추적
+        if (!bb.moveEvade && distanceToTarget > minChaseDistance && distanceToTarget < currentStopChaseRange)
         {
             bb.moveChase = true;
             
             // 상태 변경 시 로그
             if (!previousChase)
-                Debug.Log($"[BT] MoveChaseAction: 추적 모드 활성화 (거리: {distanceToTarget:F2}, 범위: {minChaseDistance:F2}~{currentDetectionRange:F2})");
+                Debug.Log($"[BT] MoveChaseAction: 추적 모드 활성화 (거리: {distanceToTarget:F2}, 범위: {minChaseDistance:F2}~{currentStopChaseRange:F2})");
             
             return State.Running;
         }
@@ -66,8 +67,8 @@ public class MoveChaseAction : BTNode
                     Debug.Log($"[BT] MoveChaseAction: 회피 모드로 인한 추적 모드 비활성화");
                 else if (distanceToTarget <= minChaseDistance)
                     Debug.Log($"[BT] MoveChaseAction: 타겟과 너무 가까움 - 추적 모드 비활성화 (거리: {distanceToTarget:F2})");
-                else if (distanceToTarget >= currentDetectionRange)
-                    Debug.Log($"[BT] MoveChaseAction: 타겟이 너무 멀어 추적 모드 비활성화 (거리: {distanceToTarget:F2}, 범위: {currentDetectionRange:F2})");
+                else if (distanceToTarget >= currentStopChaseRange)
+                    Debug.Log($"[BT] MoveChaseAction: 추적 중지 범위 도달 - 추적 모드 비활성화 (거리: {distanceToTarget:F2}, 중지범위: {currentStopChaseRange:F2})");
             }
             
             bb.moveChase = false;
@@ -187,9 +188,10 @@ public class AttackAction : BTNode
         // MonsterController의 변수들을 실시간으로 참조
         var (currentAttackRange, currentCooldown) = GetCurrentParameters();
         
+        // [수정] 공격 상태 제어를 더 명확하게 수정
         if (dist <= currentAttackRange && timer <= 0f)
         {
-            // 공격 상태를 블랙보드에 설정
+            // 공격 실행 조건 만족 시 공격 상태 활성화
             bool previousAttack = bb.attack;
             bb.attack = true;
             
@@ -202,12 +204,20 @@ public class AttackAction : BTNode
             return State.Success;
         }
         
-        // 공격 범위 밖이거나 쿨다운 중일 때는 공격 상태 해제
+        // [수정] 공격 범위 밖이거나 쿨다운 중일 때는 반드시 공격 상태 해제
         if (bb.attack)
         {
-            Debug.Log($"[BT] AttackAction: 공격 상태 해제 (거리: {dist:F2}, 범위: {currentAttackRange:F2})");
+            if (dist > currentAttackRange)
+            {
+                Debug.Log($"[BT] AttackAction: 공격 범위 밖으로 이동 - 공격 상태 해제 (거리: {dist:F2}, 범위: {currentAttackRange:F2})");
+            }
+            else if (timer > 0f)
+            {
+                Debug.Log($"[BT] AttackAction: 쿨다운 중 - 공격 상태 해제 (남은 쿨다운: {timer:F2})");
+            }
+            bb.attack = false;
         }
-        bb.attack = false;
+        
         return State.Running;
     }
 }

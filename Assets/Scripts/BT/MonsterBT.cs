@@ -38,8 +38,9 @@ public class MonsterBT : MonoBehaviour
         var attackNode = new AttackAction(selfTransform, bb, 2.2f, 1f);  // 1.5f에서 2.2f로 증가
 
         // 루트 트리: 이동(회피+추적)과 공격을 병렬로 실행
+        // [수정] Any 정책 사용: 이동과 공격 중 하나라도 성공하면 성공으로 처리
         //root = new Parallel(new List<BTNode> { moveEvadeNode, moveChaseNode, attackNode });
-        root = new Parallel(new List<BTNode> { moveChaseNode, attackNode });
+        root = new Parallel(new List<BTNode> { moveChaseNode, attackNode }, Parallel.Policy.Any);
 
 
         Debug.Log($"[{name}] BT 구조 생성 완료 - 회피/추적/공격 병렬 실행");
@@ -74,11 +75,12 @@ public class MonsterBT : MonoBehaviour
         float currentSafeDistance = monsterController.safeDistance;
         float currentDetectionRange = monsterController.detectionRange;
         float currentAttackCooldown = monsterController.attackCooldown;
+        float currentStopChaseRange = monsterController.stopChaseRange;  // 새로운 파라미터 추가
         
         // 파라미터 변경 시 로그 출력 (너무 자주 출력되지 않도록 제한)
         if (Time.frameCount % 300 == 0) // 300프레임마다 한 번씩
         {
-            Debug.Log($"[{name}] BT 파라미터 업데이트 - 공격범위: {currentAttackRange:F2}, 안전거리: {currentSafeDistance:F2}, 감지범위: {currentDetectionRange:F2}, 쿨다운: {currentAttackCooldown:F2}");
+            Debug.Log($"[{name}] BT 파라미터 업데이트 - 공격범위: {currentAttackRange:F2}, 추적중지범위: {currentStopChaseRange:F2}, 안전거리: {currentSafeDistance:F2}, 감지범위: {currentDetectionRange:F2}, 쿨다운: {currentAttackCooldown:F2}");
         }
     }
     
@@ -92,19 +94,17 @@ public class MonsterBT : MonoBehaviour
         float currentAttackRange = monsterController != null ? monsterController.attackRange : 2.2f;
         float currentSafeDistance = monsterController != null ? monsterController.safeDistance : 4f;
         float currentDetectionRange = monsterController != null ? monsterController.detectionRange : 8f;
+        float currentStopChaseRange = monsterController != null ? monsterController.stopChaseRange : 2.1f;  // 새로운 파라미터 추가
         
-        // 공격 가능 여부 (거리와 쿨다운 체크는 MonsterController에서 처리)
-        // 공격 범위를 MonsterController에서 실시간으로 가져와서 사용
-        bool previousAttackState = bb.attack;
-        bb.attack = distanceToTarget <= currentAttackRange;
+        // [수정] 공격 상태는 AttackAction에서만 제어하도록 변경
+        // bb.attack = distanceToTarget <= currentAttackRange; // 이 라인 제거
         
-        // 공격 상태 변경 시 로그
-        if (previousAttackState != bb.attack)
+        // 공격 가능 여부 및 추적 상태 로깅 (상태 변경 없이 정보만 표시)
+        bool isInAttackRange = distanceToTarget <= currentAttackRange;
+        bool isInStopChaseRange = distanceToTarget <= currentStopChaseRange;
+        if (Time.frameCount % 120 == 0) // 120프레임마다 한 번씩 로깅
         {
-            if (bb.attack)
-                Debug.Log($"[{name}] BT 공격 판단: 공격 범위 내 진입 (거리: {distanceToTarget:F2}, 범위: {currentAttackRange:F2})");
-            else
-                Debug.Log($"[{name}] BT 공격 판단: 공격 범위 밖 (거리: {distanceToTarget:F2}, 범위: {currentAttackRange:F2})");
+            Debug.Log($"[{name}] BT 상태 정보 - 거리: {distanceToTarget:F2}, 공격범위: {currentAttackRange:F2}, 추적중지범위: {currentStopChaseRange:F2}, 공격가능: {isInAttackRange}, 추적중지: {isInStopChaseRange}, BT공격상태: {bb.attack}");
         }
         
         // 이동 상태는 BT의 액션에서 결정되므로 그대로 유지

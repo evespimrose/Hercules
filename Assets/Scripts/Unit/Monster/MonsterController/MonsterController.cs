@@ -17,6 +17,8 @@ public class MonsterController : MonoBehaviour
     public float attackRange = 2.2f;  // 1.5f에서 2.2f로 증가
     [Range(0.1f, 5f)]
     public float attackCooldown = 1f;
+    [Range(0.1f, 5f)]
+    public float stopChaseRange = 2.1f;  // 추적을 멈추고 서는 범위 (공격 범위보다 약간 작게)
     
     [Header("AI Settings")]
     [Range(1f, 20f)]
@@ -28,6 +30,7 @@ public class MonsterController : MonoBehaviour
     [SerializeField] private bool showGizmos = true;
     [SerializeField] private Color chaseRangeColor = Color.blue;
     [SerializeField] private Color attackRangeColor = Color.red;
+    [SerializeField] private Color stopChaseRangeColor = Color.orange;  // 추적 중지 범위 색상 추가
     [SerializeField] private Color evadeRangeColor = Color.yellow;
     [SerializeField] private Color detectionRangeColor = Color.green;
     
@@ -265,6 +268,20 @@ public class MonsterController : MonoBehaviour
         moveSpeed = speed;
     }
     
+    // [추가] 추적 중지 범위 설정 메서드
+    public void SetStopChaseRange(float range)
+    {
+        stopChaseRange = Mathf.Clamp(range, 0.1f, attackRange - 0.1f); // 공격 범위보다 작게 제한
+        Debug.Log($"[{name}] 추적 중지 범위 변경: {stopChaseRange:F2}");
+    }
+    
+    // [추가] 공격 범위 설정 메서드 (추적 중지 범위와의 관계 유지)
+    public void SetAttackRange(float range)
+    {
+        attackRange = Mathf.Max(range, stopChaseRange + 0.1f); // 추적 중지 범위보다 크게 제한
+        Debug.Log($"[{name}] 공격 범위 변경: {attackRange:F2}");
+    }
+    
     // BT 상태를 외부에서 설정할 수 있는 메서드들
     public void SetBTState(bool chase, bool evade, bool attack)
     {
@@ -295,6 +312,10 @@ public class MonsterController : MonoBehaviour
         // 공격 범위
         Gizmos.color = attackRangeColor;
         Gizmos.DrawWireSphere(center, attackRange);
+        
+        // 추적 중지 범위 (stopChaseRange)
+        Gizmos.color = stopChaseRangeColor;
+        Gizmos.DrawWireSphere(center, stopChaseRange);
         
         // 회피 판단 범위 (safeDistance)
         Gizmos.color = evadeRangeColor;
@@ -334,6 +355,10 @@ public class MonsterController : MonoBehaviour
         // 공격 범위
         Gizmos.color = new Color(attackRangeColor.r, attackRangeColor.g, attackRangeColor.b, 0.1f);
         Gizmos.DrawSphere(center, attackRange);
+        
+        // 추적 중지 범위
+        Gizmos.color = new Color(stopChaseRangeColor.r, stopChaseRangeColor.g, stopChaseRangeColor.b, 0.1f);
+        Gizmos.DrawSphere(center, stopChaseRange);
         
         // 회피 판단 범위
         Gizmos.color = new Color(evadeRangeColor.r, evadeRangeColor.g, evadeRangeColor.b, 0.1f);
