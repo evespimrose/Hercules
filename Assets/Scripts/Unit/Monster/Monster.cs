@@ -74,7 +74,7 @@ public class Monster : Unit, IHitReceiver
 
     private void OnCollisionStay2D(Collision2D collision)
     {
-        HandleOngoingCollision(collision.gameObject);
+        //HandleOngoingCollision(collision.gameObject);
     }
 
     // (Collision) 다른 오브젝트와의 물리 충돌 처리
@@ -91,7 +91,7 @@ public class Monster : Unit, IHitReceiver
         var otherUnit = other.GetComponent<Unit>();
         if (otherUnit != null && otherUnit != this)
         {
-            ProcessUnitCollision(otherUnit, contactPoint);
+            //ProcessUnitCollision(otherUnit, contactPoint);
         }
     }
 
@@ -181,13 +181,6 @@ public class Monster : Unit, IHitReceiver
             rb.AddForce(pushDirection * 1f, ForceMode2D.Impulse);
         }
     }
-
-    //// 유닛 간 충돌 시 약간 밀어내기
-    //private void ProcessUnitCollision(Unit otherUnit, Vector2 contactPoint)
-    //{
-    //    Vector2 pushDirection = (transform.position - otherUnit.transform.position).normalized;
-    //    rb.AddForce(pushDirection * 1f, ForceMode2D.Impulse);
-    //}
 
     // ─────────────────────────────────────────────────────────────
     // IHitReceiver
