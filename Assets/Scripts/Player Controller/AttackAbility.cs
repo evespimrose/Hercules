@@ -14,7 +14,7 @@ public class AttackAbility : MonoBehaviour
     public Hitbox hitbox; // 자식 히트박스(Trigger Collider)
 
     [Header("Aim")]
-    [Tooltip("Facing: 캐릭터 전방 기준 / Mouse: 마우스 방향 기준(사거리는 고정)")]
+    [Tooltip("Facing: WASD 기반 전방 / Mouse: 마우스 방향 (사거리는 고정)")]
     public AttackAimMode aimMode = AttackAimMode.Facing;
 
     [Tooltip("명시적으로 사용할 카메라(비어있으면 Camera.main)")]
@@ -23,7 +23,14 @@ public class AttackAbility : MonoBehaviour
     CharacterMotor2D motor;
     Unit ownerUnit;
     StatsBase ownerStats;
-    SpriteRenderer sr;   // flipX 사용하는 프로젝트 대비
+
+    // ── Facing 모드용 상태
+    // 마지막으로 눌렸던 수평(A/D) 방향: +1(오른쪽), -1(왼쪽)
+    int lastHorizSign = +1;
+    // 마지막으로 눌렸던 수직(W/S) 방향: +1(위), -1(아래) — 동시 입력 처리용
+    int lastVertSign = +1;
+    // 현재 프레임 공격에 사용할 최종 바라보기(업데이트에서 계산)
+    Vector2 lastFacingDir = Vector2.right;
 
     bool cooling, busy;
     public bool IsBusy => busy;
@@ -33,12 +40,51 @@ public class AttackAbility : MonoBehaviour
         motor = GetComponent<CharacterMotor2D>();
         ownerUnit = GetComponent<Unit>();
         ownerStats = GetComponent<StatsBase>();
-        sr = GetComponentInChildren<SpriteRenderer>(); // 없을 수도 있음
 
         if (!attackCamera) attackCamera = Camera.main;
 
         if (!hitbox) Debug.LogError($"{name}: AttackAbility.hitbox 가 비었습니다.");
         if (hitbox) hitbox.Disarm(); // 시작 시 꺼두기
+    }
+
+    void Update()
+    {
+        // ── 키다운(마지막 클릭) 추적
+        if (Input.GetKeyDown(KeyCode.A)) lastHorizSign = -1;
+        if (Input.GetKeyDown(KeyCode.D)) lastHorizSign = +1;
+        if (Input.GetKeyDown(KeyCode.W)) lastVertSign = +1;
+        if (Input.GetKeyDown(KeyCode.S)) lastVertSign = -1;
+
+        // ── 현재 유지 입력 상태
+        bool aHeld = Input.GetKey(KeyCode.A);
+        bool dHeld = Input.GetKey(KeyCode.D);
+        bool wHeld = Input.GetKey(KeyCode.W);
+        bool sHeld = Input.GetKey(KeyCode.S);
+
+        // 규칙:
+        // 1) A/D가 눌려 있으면 수평만 사용(수직 무시)
+        if (aHeld ^ dHeld)
+        {
+            lastFacingDir = new Vector2(dHeld ? +1f : -1f, 0f);
+        }
+        else if (!aHeld && !dHeld)
+        {
+            // 2) 수평이 중립일 때만 W/S 적용
+            if (wHeld ^ sHeld)
+            {
+                lastFacingDir = new Vector2(0f, wHeld ? +1f : -1f);
+            }
+            else if (wHeld && sHeld)
+            {
+                // 동시 입력이면 마지막 수직 클릭 우선
+                lastFacingDir = new Vector2(0f, lastVertSign >= 0 ? +1f : -1f);
+            }
+            else
+            {
+                // 3) 완전 중립이면 마지막 A/D 기준
+                lastFacingDir = new Vector2(lastHorizSign >= 0 ? +1f : -1f, 0f);
+            }
+        }
     }
 
     public void TryStart()
@@ -66,29 +112,36 @@ public class AttackAbility : MonoBehaviour
             var box = hitbox.GetComponent<BoxCollider2D>();
             if (box && cfg) box.size = cfg.hitboxSize;
 
-            Vector2 off = cfg ? cfg.hitboxOffset : Vector2.right; // 기본 오프셋(+X 방향)
+            Vector2 off = cfg ? cfg.hitboxOffset : Vector2.right; // 사거리 오프셋(+X 기준)
 
+            // ── 조준 방향 결정
+            Vector2 dir;
             if (aimMode == AttackAimMode.Mouse && (attackCamera != null || Camera.main != null))
             {
-                // ★ 마우스 방향 계산(플레이어 기준): 회전만 적용, 중심 이동 없음
-                Vector2 aimDir = GetMouseAimDir(attackCamera ? attackCamera : Camera.main, transform);
-
-                float ang = Mathf.Atan2(aimDir.y, aimDir.x) * Mathf.Rad2Deg;
-                hitbox.transform.localRotation = Quaternion.Euler(0f, 0f, ang);
-
-                // 사거리 고정: 로컬 +X로 오프셋.x(양수)만큼, Y는 설정 그대로
-                if (box) box.offset = new Vector2(Mathf.Abs(off.x), off.y);
+                dir = GetMouseAimDir(attackCamera ? attackCamera : Camera.main, transform);
             }
             else
             {
-                // ★ 캐릭터 전방 기준: 좌/우만 뒤집기(회전 없음)
-                hitbox.transform.localRotation = Quaternion.identity;
-
-                float facing = GetFacingSign(); // flipX 또는 localScale.x
-                if (box) box.offset = new Vector2(off.x * facing, off.y);
+                // Facing: WASD 규칙으로 계산된 lastFacingDir 사용
+                dir = (lastFacingDir.sqrMagnitude > 0.0001f) ? lastFacingDir : Vector2.right;
             }
 
-            // 최종 데미지는 CombatMath에서만 계산(배수 선적용 금지)
+            // 각도 계산
+            float ang = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+
+            // ── 미러 보정: 상위 체인 X스케일이 음수면 좌우 거울 뒤집힘 → 보정
+            if (IsMirroredX(hitbox.transform))
+            {
+                // θ' = 180° - θ
+                ang = 180f - ang;
+            }
+
+            // 회전만 적용(중심 이동 없음) — 사거리는 고정(오프셋.x의 절댓값)
+            hitbox.transform.localRotation = Quaternion.Euler(0f, 0f, ang);
+            if (box)
+                box.offset = new Vector2(Mathf.Abs(off.x), off.y);
+
+            // ===== Arm → 활성 구간 =====
             float baseDamage = (cfg ? cfg.damage : 10f);
             Vector2 kb = new Vector2(cfg ? cfg.knockback : 6f, 0f);
 
@@ -98,9 +151,8 @@ public class AttackAbility : MonoBehaviour
 
             hitbox.Disarm();
 
-            // 다음 공격에 영향 없도록(모드 전환 대비) 마우스 모드면 회전 복원
-            if (aimMode == AttackAimMode.Mouse)
-                hitbox.transform.localRotation = Quaternion.identity;
+            // 다음 공격에 영향 없도록 회전 복원
+            hitbox.transform.localRotation = Quaternion.identity;
         }
         else
         {
@@ -151,19 +203,14 @@ public class AttackAbility : MonoBehaviour
         return dir.normalized;
     }
 
-    float GetFacingSign()
+    // 상위 체인 어디든 X 미러가 있으면 true
+    static bool IsMirroredX(Transform t)
     {
-        // SpriteRenderer.flipX를 우선 사용 (flipX == true => 보통 '왼쪽을 봄')
-        if (sr != null) return sr.flipX ? -1f : 1f;
-
-        // 없으면 localScale.x 기준
-        float sx = transform.localScale.x;
-        if (Mathf.Approximately(sx, 0f)) return 1f;
-        return Mathf.Sign(sx);
+        return t != null && t.lossyScale.x < 0f;
     }
 
 #if UNITY_EDITOR
-    // 예상 판정 프리뷰(선택 시)
+    // 예상 판정 프리뷰(선택 시) — 실제 로직과 동일한 보정 사용
     void OnDrawGizmosSelected()
     {
         if (!cfg) return;
@@ -172,21 +219,23 @@ public class AttackAbility : MonoBehaviour
         Vector3 center;
         Vector3 size = new Vector3(cfg.hitboxSize.x, cfg.hitboxSize.y, 0.01f);
 
+        Vector2 dir;
         if (aimMode == AttackAimMode.Mouse && (attackCamera != null || Camera.main != null))
         {
             var cam = attackCamera ? attackCamera : Camera.main;
-            Vector2 aimDir = GetMouseAimDir(cam, transform);
-            float ang = Mathf.Atan2(aimDir.y, aimDir.x) * Mathf.Rad2Deg;
-
-            // 로컬 +X 기준 오프셋.x(양수)만큼 회전하여 월드 위치 미리보기(중심 이동은 안 함)
-            Vector2 rotated = Quaternion.Euler(0, 0, ang) * new Vector2(Mathf.Abs(off.x), off.y);
-            center = transform.TransformPoint(rotated);
+            dir = GetMouseAimDir(cam, transform);
         }
         else
         {
-            float facing = GetFacingSign();
-            center = transform.TransformPoint(new Vector3(off.x * facing, off.y, 0f));
+            dir = (lastFacingDir.sqrMagnitude > 0.0001f) ? lastFacingDir : Vector2.right;
         }
+
+        float ang = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        if (IsMirroredX(hitbox != null ? hitbox.transform : transform))
+            ang = 180f - ang;
+
+        Vector2 rotated = Quaternion.Euler(0, 0, ang) * new Vector2(Mathf.Abs(off.x), off.y);
+        center = transform.TransformPoint(rotated);
 
         Color fill = new Color(1f, 0.5f, 0f, 0.08f);
         Color line = new Color(1f, 0.5f, 0f, 0.9f);
