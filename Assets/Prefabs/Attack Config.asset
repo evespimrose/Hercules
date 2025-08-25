@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f51696904b963834ba3219674d64ce69, type: 3}
   m_Name: Attack Config
   m_EditorClassIdentifier: 
-  damage: 10
+  damage: 100
   startUp: 0.08
   active: 0.12
   recovery: 0.16

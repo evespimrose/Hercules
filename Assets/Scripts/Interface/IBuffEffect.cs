@@ -1,18 +1,20 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using Hercules.StatsSystem;
 
 public interface IBuffEffect
 {
     void Apply(Unit target, float time, Vector2? direction = null, float magnitude = 0f);
 }
 
+// ─── 공용: 넉백/스턴/무적/출혈(기존 로직 유지) ───
 public class KnockbackEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
-        if (dir.HasValue)
-            target.ApplyKnockback(dir.Value, magnitude > 0 ? magnitude : target.defaultKnockbackForce);
+        var d = dir ?? Vector2.zero;
+        float f = magnitude > 0f ? magnitude : target.defaultKnockbackForce;
+        target.ApplyKnockback(d, f);
     }
 }
 
@@ -20,6 +22,7 @@ public class StunEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
+        if (time <= 0f) return;
         target.ApplyStun(time);
     }
 }
@@ -28,141 +31,181 @@ public class InvincibleEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
+        if (time <= 0f) return;
         target.ApplyInvincible(time);
     }
 }
 
-// ---- 플레이어 전용 Buff ----
 public class HitstopEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
-        if (target is Player player)
-            player.ApplyHitstop(time);
+        if (time <= 0f) return;
+        // magnitude를 코루틴에 전달
+        target.StartCoroutine(HitstopCoroutine(time, magnitude));
+    }
+
+    private System.Collections.IEnumerator HitstopCoroutine(float duration, float slowScale)
+    {
+        float originalScale = Time.timeScale;
+
+        // 지정값이 있으면 그 값으로(0.01~1 사이로 클램프), 없으면 0.05로 고정
+        float slow = (slowScale > 0f) ? Mathf.Clamp(slowScale, 0.01f, 1f) : 0.05f;
+
+        Time.timeScale = slow;
+        yield return new WaitForSecondsRealtime(duration);
+        Time.timeScale = originalScale;
     }
 }
 
-// ---- 플레이어 전용 Buff ----
-// 버프명 : 불굴
-// 버프효과 : HP가 1미만으로 내려갈 시 5초간 무적버프
+
+// 불굴(플레이어 전용 처리)
+//  - Player면 TriggerIndomitable 호출
+//  - Player가 아니면 Invincible 대체(프로젝트 정책에 맞게 조정 가능)
 public class IndomitableEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
-        if (target is Player p)
+        var player = target as Player;
+        if (player != null)
         {
-            p.TriggerIndomitable(time);
-            return;
+            player.TriggerIndomitable(time);
         }
-
-        // 그 외 유닛: "무적 + time 후 강제 사망"의 일반형
-        target.ApplyInvincible(time);
-        target.StartCoroutine(KillAfter(target, time));
-    }
-
-    private System.Collections.IEnumerator KillAfter(Unit t, float time)
-    {
-        yield return new WaitForSeconds(time);
-        t.Die();
+        else
+        {
+            // Fallback: 비플레이어에선 무적만 부여
+            if (time > 0f) target.ApplyInvincible(time);
+        }
     }
 }
 
-// ---- 공용 Buff ----
-// 버프명 : 출혈(Bleeding) — 단일형(하위호환)
 public class BleedingEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
-        float duration = (time > 0f) ? time : 5f;           // 기본 5초
-        float damagePerTick = (magnitude > 0f) ? magnitude : 7f; // 기본 7
-        target.ApplyBleeding(duration, 0.5f, damagePerTick);
+        if (time <= 0f) return;
+        target.StartBleeding(time);
     }
 }
 
-// ---- 공용 Buff ----
-// 버프명 : BleedingStack — 스택형(중첩)
 public class BleedingStackEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
-        float duration = (time > 0f) ? time : 5f;                 // 기본 5초
-        float baseDamage = (magnitude > 0f) ? magnitude : 7f;     // 1스택 기본 7
-        float perStackBonus = 1f;                                  // 스택당 +1 (원하면 조정)
-        int maxStacks = 5;                                         // 최대 5스택
-
-        target.ApplyBleedingStacking(
-            duration,
-            tickInterval: 0.5f,
-            baseDamage: baseDamage,
-            perStackBonus: perStackBonus,
-            addStacks: 1,
-            maxStacks: maxStacks
-        );
+        int stacks = Mathf.Max(1, Mathf.RoundToInt(magnitude));
+        target.StartBleedingStack(time, stacks);
     }
 }
 
-// ---- 플레이어 전용 Buff ----
-// 버프명 : Exhaustion — 이동/공속/피해/점프 약화
+// ─── 플레이어/유닛 공통 스탯에 직접 Modifier로 반영되는 디버프들 ───
 public class ExhaustionEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
-        if (target is Player p)
-        {
-            p.ApplyExhaustion();  
-        }
+        var stats = target.GetComponent<StatsBase>();
+        if (stats == null) return;
+
+        var src = target;
+        stats.MoveSpeed.AddModifier(new StatModifier { op = StatOp.Mult, value = 0.8f, source = src });
+        stats.AttackSpeed.AddModifier(new StatModifier { op = StatOp.Mult, value = 0.9f, source = src });
+        stats.MaxJumpHeight.AddModifier(new StatModifier { op = StatOp.Mult, value = 0.9f, source = src });
+
+        if (time > 0f)
+            target.StartCoroutine(RemoveAfter(time, stats, src,
+                removeMove: true, removeAtk: true, removeJump: true));
+    }
+
+    private IEnumerator RemoveAfter(float t, StatsBase s, Object src,
+        bool removeMove, bool removeAtk, bool removeJump)
+    {
+        yield return new WaitForSeconds(t);
+        if (removeMove) s.MoveSpeed.RemoveModifiersBySource(src);
+        if (removeAtk) s.AttackSpeed.RemoveModifiersBySource(src);
+        if (removeJump) s.MaxJumpHeight.RemoveModifiersBySource(src);
     }
 }
 
-// ---- 플레이어 전용 Buff ----
-// 버프명 : SlowMove — 이동속도 감소
 public class SlowMoveEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
-        if (target is Player p)
-        {
-            p.ApplySlowMove();
-        }
+        var stats = target.GetComponent<StatsBase>();
+        if (stats == null) return;
+
+        float mul = (magnitude > 0f) ? Mathf.Clamp(magnitude, 0.01f, 1f) : 0.7f;
+        var src = target;
+        stats.MoveSpeed.AddModifier(new StatModifier { op = StatOp.Mult, value = mul, source = src });
+
+        if (time > 0f) target.StartCoroutine(RemoveAfter(time, stats, src));
+    }
+
+    private IEnumerator RemoveAfter(float t, StatsBase s, Object src)
+    {
+        yield return new WaitForSeconds(t);
+        s.MoveSpeed.RemoveModifiersBySource(src);
     }
 }
 
-// ---- 플레이어 전용 Buff ----
-// 버프명 : SlowAttack — 공격속도 감소
 public class SlowAttackEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
-        if (target is Player p)
-        {
-            p.ApplySlowAttack();
-        }
+        var stats = target.GetComponent<StatsBase>();
+        if (stats == null) return;
+
+        float mul = (magnitude > 0f) ? Mathf.Clamp(magnitude, 0.01f, 1f) : 0.8f;
+        var src = target;
+        stats.AttackSpeed.AddModifier(new StatModifier { op = StatOp.Mult, value = mul, source = src });
+
+        if (time > 0f) target.StartCoroutine(RemoveAfter(time, stats, src));
+    }
+
+    private IEnumerator RemoveAfter(float t, StatsBase s, Object src)
+    {
+        yield return new WaitForSeconds(t);
+        s.AttackSpeed.RemoveModifiersBySource(src);
     }
 }
 
-// ---- 플레이어 전용 Buff ----
-// 버프명 : WeakAttack — 데미지 감소
-public class WeakAttackEffect : IBuffEffect
+public class WeakAttackEffect : IBuffEffect // Week → Weak
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
-        if (target is Player p)
-        {
-            p.ApplyWeakAttack();
-        }
+        var stats = target.GetComponent<StatsBase>();
+        if (stats == null) return;
+
+        // 실제 공식 확정 시 CombatMath에서 DamageMultiplier를 사용하도록 설계.
+        float mul = (magnitude > 0f) ? Mathf.Clamp(magnitude, 0.01f, 1f) : 0.8f;
+        var src = target;
+        stats.DamageMultiplier.AddModifier(new StatModifier { op = StatOp.Mult, value = mul, source = src });
+
+        if (time > 0f) target.StartCoroutine(RemoveAfter(time, stats, src));
+    }
+
+    private IEnumerator RemoveAfter(float t, StatsBase s, Object src)
+    {
+        yield return new WaitForSeconds(t);
+        s.DamageMultiplier.RemoveModifiersBySource(src);
     }
 }
 
-// ---- 플레이어 전용 Buff ----
-// 버프명 : LowJump — 점프 높이 감소
 public class LowJumpEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
     {
-        if (target is Player p)
-        {
-            p.ApplyLowJump();
-        }
+        var stats = target.GetComponent<StatsBase>();
+        if (stats == null) return;
+
+        float mul = (magnitude > 0f) ? Mathf.Clamp(magnitude, 0.01f, 1f) : 0.8f;
+        var src = target;
+        stats.MaxJumpHeight.AddModifier(new StatModifier { op = StatOp.Mult, value = mul, source = src });
+
+        if (time > 0f) target.StartCoroutine(RemoveAfter(time, stats, src));
+    }
+
+    private IEnumerator RemoveAfter(float t, StatsBase s, Object src)
+    {
+        yield return new WaitForSeconds(t);
+        s.MaxJumpHeight.RemoveModifiersBySource(src);
     }
 }
-

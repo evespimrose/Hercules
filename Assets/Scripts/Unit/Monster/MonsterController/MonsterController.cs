@@ -105,36 +105,36 @@ public class MonsterController : MonoBehaviour
         if (isChasing != bb.moveChase)
         {
             isChasing = bb.moveChase;
-            if (isChasing)
-                Debug.Log($"[{name}] BT 상태 전환: 추적 모드 시작");
-            else
-                Debug.Log($"[{name}] BT 상태 전환: 추적 모드 종료");
+            //if (isChasing)
+            //    Debug.Log($"[{name}] BT 상태 전환: 추적 모드 시작");
+            //else
+            //    Debug.Log($"[{name}] BT 상태 전환: 추적 모드 종료");
         }
         
         if (isEvading != bb.moveEvade)
         {
             isEvading = bb.moveEvade;
-            if (isEvading)
-                Debug.Log($"[{name}] BT 상태 전환: 회피 모드 시작");
-            else
-                Debug.Log($"[{name}] BT 상태 전환: 회피 모드 종료");
+            //if (isEvading)
+            //    Debug.Log($"[{name}] BT 상태 전환: 회피 모드 시작");
+            //else
+            //    Debug.Log($"[{name}] BT 상태 전환: 회피 모드 종료");
         }
         
         if (canAttack != bb.attack)
         {
             canAttack = bb.attack;
-            if (canAttack)
-                Debug.Log($"[{name}] BT 상태 전환: 공격 가능 상태");
-            else
-                Debug.Log($"[{name}] BT 상태 전환: 공격 불가 상태");
+            //if (canAttack)
+            //    Debug.Log($"[{name}] BT 상태 전환: 공격 가능 상태");
+            //else
+            //    Debug.Log($"[{name}] BT 상태 전환: 공격 불가 상태");
             }
         
         // 타겟이 변경되었는지 확인
         if (bb.target != target)
         {
             target = bb.target;
-            if (target != null)
-                Debug.Log($"[{name}] BT 타겟 변경: {target.name}");
+            //if (target != null)
+            //    Debug.Log($"[{name}] BT 타겟 변경: {target.name}");
         }
     }
     
@@ -161,26 +161,26 @@ public class MonsterController : MonoBehaviour
             float timeSinceLastAttack = Time.time - lastAttackTime;
             if (timeSinceLastAttack >= attackCooldown)
             {
-                Debug.Log($"[{name}] 공격 조건 만족: canAttack={canAttack}, 쿨다운={timeSinceLastAttack:F2}/{attackCooldown}");
+                //Debug.Log($"[{name}] 공격 조건 만족: canAttack={canAttack}, 쿨다운={timeSinceLastAttack:F2}/{attackCooldown}");
                 Attack();
             }
             else
             {
                 // 쿨다운 중일 때 로그 (너무 자주 출력되지 않도록)
-                if (Time.frameCount % 120 == 0) // 120프레임마다 한 번씩
-                {
-                    Debug.Log($"[{name}] 공격 대기 중: 쿨다운 {timeSinceLastAttack:F2}/{attackCooldown}");
-                }
+                //if (Time.frameCount % 120 == 0) // 120프레임마다 한 번씩
+                //{
+                //    Debug.Log($"[{name}] 공격 대기 중: 쿨다운 {timeSinceLastAttack:F2}/{attackCooldown}");
+                //}
             }
         }
-        else
-        {
-            // 공격 불가 상태일 때 로그 (너무 자주 출력되지 않도록)
-            if (Time.frameCount % 120 == 0) // 120프레임마다 한 번씩
-            {
-                Debug.Log($"[{name}] 공격 불가: canAttack={canAttack}");
-            }
-        }
+        //else
+        //{
+        //    // 공격 불가 상태일 때 로그 (너무 자주 출력되지 않도록)
+        //    if (Time.frameCount % 120 == 0) // 120프레임마다 한 번씩
+        //    {
+        //        Debug.Log($"[{name}] 공격 불가: canAttack={canAttack}");
+        //    }
+        //}
     }
     
     void MoveTowardsTarget(float speed)
@@ -189,10 +189,10 @@ public class MonsterController : MonoBehaviour
         rb.velocity = direction * speed;
         
         // 이동 로그 (너무 자주 출력되지 않도록 제한)
-        if (Time.frameCount % 60 == 0) // 60프레임마다 한 번씩
-        {
-            Debug.Log($"[{name}] 실제 행동: 추적 이동 중 (속도: {speed}, 방향: {direction})");
-        }
+        //if (Time.frameCount % 60 == 0) // 60프레임마다 한 번씩
+        //{
+        //    Debug.Log($"[{name}] 실제 행동: 추적 이동 중 (속도: {speed}, 방향: {direction})");
+        //}
     }
     
     void MoveAwayFromTarget(float speed)
@@ -201,18 +201,18 @@ public class MonsterController : MonoBehaviour
         rb.velocity = direction * speed;
         
         // 이동 로그 (너무 자주 출력되지 않도록 제한)
-        if (Time.frameCount % 60 == 0) // 60프레임마다 한 번씩
-        {
-            Debug.Log($"[{name}] 실제 행동: 회피 이동 중 (속도: {speed}, 방향: {direction})");
-        }
+        //if (Time.frameCount % 60 == 0) // 60프레임마다 한 번씩
+        //{
+        //    Debug.Log($"[{name}] 실제 행동: 회피 이동 중 (속도: {speed}, 방향: {direction})");
+        //}
     }
     
     void StopMovement()
     {
-        if (rb.velocity.sqrMagnitude > 0.01f) // 정지 상태가 아닐 때만 로그
-        {
-            Debug.Log($"[{name}] 실제 행동: 이동 정지");
-        }
+        //if (rb.velocity.sqrMagnitude > 0.01f) // 정지 상태가 아닐 때만 로그
+        //{
+        //    Debug.Log($"[{name}] 실제 행동: 이동 정지");
+        //}
         rb.velocity = Vector2.zero;
     }
     
@@ -223,13 +223,13 @@ public class MonsterController : MonoBehaviour
         // 공격 실행
         lastAttackTime = Time.time;
         
-        Debug.Log($"[{name}] ===== 공격 실행! =====");
-        Debug.Log($"[{name}] 공격자: {name} (HP: {monster?.currentHealth}/{monster?.maxHealth})");
-        Debug.Log($"[{name}] 공격 대상: {target.name}");
-        Debug.Log($"[{name}] 공격력: 10");
-        Debug.Log($"[{name}] 공격 위치: {transform.position}");
-        Debug.Log($"[{name}] 타겟 위치: {target.position}");
-        Debug.Log($"[{name}] 공격 거리: {Vector2.Distance(transform.position, target.position):F2}");
+        //Debug.Log($"[{name}] ===== 공격 실행! =====");
+        //Debug.Log($"[{name}] 공격자: {name} (HP: {monster?.currentHealth}/{monster?.maxHealth})");
+        //Debug.Log($"[{name}] 공격 대상: {target.name}");
+        //Debug.Log($"[{name}] 공격력: 10");
+        //Debug.Log($"[{name}] 공격 위치: {transform.position}");
+        //Debug.Log($"[{name}] 타겟 위치: {target.position}");
+        //Debug.Log($"[{name}] 공격 거리: {Vector2.Distance(transform.position, target.position):F2}");
         
         // Monster의 DealDamage 메서드 호출
         if (monster != null)
@@ -237,20 +237,22 @@ public class MonsterController : MonoBehaviour
             Unit targetUnit = target.GetComponent<Unit>();
             if (targetUnit != null)
             {
-                monster.DealDamage(targetUnit, 10f); // 기본 공격력 10
-                Debug.Log($"[{name}] 공격 결과: {target.name}에게 10 피해 적용 완료");
+                //monster.DealDamage(targetUnit, 10f); // 기본 공격력 10
+                GetComponent<MonsterHitboxAttackController>().TryAttackOnce();
+
+                //Debug.Log($"[{name}] 공격 결과: {target.name}에게 10 피해 적용 완료");
             }
-            else
-            {
-                Debug.LogWarning($"[{name}] 공격 실패: {target.name}에 Unit 컴포넌트가 없음");
-            }
+            //else
+            //{
+            //    Debug.LogWarning($"[{name}] 공격 실패: {target.name}에 Unit 컴포넌트가 없음");
+            //}
         }
-        else
-        {
-            Debug.LogError($"[{name}] 공격 실패: Monster 컴포넌트가 없음");
-        }
+        //else
+        //{
+        //    Debug.LogError($"[{name}] 공격 실패: Monster 컴포넌트가 없음");
+        //}
         
-        Debug.Log($"[{name}] ===== 공격 완료 =====");
+        // Debug.Log($"[{name}] ===== 공격 완료 =====");
     }
     
     // 외부에서 호출할 수 있는 공개 메서드들
