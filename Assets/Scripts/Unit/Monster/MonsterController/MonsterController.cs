@@ -232,11 +232,11 @@ public class MonsterController : MonoBehaviour
         if (monster != null)
         {
             Unit targetUnit = target.GetComponent<Unit>();
-            //if (targetUnit != null)
-            //{
-            //    monster.DealDamage(targetUnit, 10f); // 기본 공격력 10
-            //    Debug.Log($"[{name}] 공격 결과: {target.name}에게 10 피해 적용 완료");
-            //}
+            if (targetUnit != null)
+            {
+                monster.DealDamage(targetUnit, 10f); // 기본 공격력 10
+                //Debug.Log($"[{name}] 공격 결과: {target.name}에게 10 피해 적용 완료");
+            }
             //else
             //{
             //    Debug.LogWarning($"[{name}] 공격 실패: {target.name}에 Unit 컴포넌트가 없음");

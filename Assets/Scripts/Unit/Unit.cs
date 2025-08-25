@@ -44,6 +44,8 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
         Knockback,
         Stun,
         Invincible,
+        Hitstop,       
+        Indomitable,   
         Bleeding,
         BleedingStack,
         Exhaustion,
@@ -189,6 +191,8 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
             case Buff.Knockback: effect = new KnockbackEffect(); break;
             case Buff.Stun: effect = new StunEffect(); break;
             case Buff.Invincible: effect = new InvincibleEffect(); break;
+            case Buff.Hitstop: effect = new HitstopEffect(); break; 
+            case Buff.Indomitable: effect = new IndomitableEffect(); break; 
             case Buff.Bleeding: effect = new BleedingEffect(); break;
             case Buff.BleedingStack: effect = new BleedingStackEffect(); break;
             case Buff.Exhaustion: effect = new ExhaustionEffect(); break;

@@ -296,6 +296,7 @@
 
 
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using Hercules.StatsSystem;
 
@@ -319,7 +320,29 @@ public class Player : Unit
         playerController = GetComponent<PlayerController>();
     }
 
-    public bool CanUseIndomitable => enableIndomitable && !indomitableConsumed;
+    public bool CanUseIndomitable => enableIndomitable && !indomitableActive && !indomitableConsumed;
+
+    /// <summary>
+    /// 외부에서 버프로 호출 가능: 불굴 강제 발동(즉시 사망 방지 + 무적 + 타이머 후 사망)
+    /// </summary>
+    public void TriggerIndomitable(float duration)
+    {
+        if (!enableIndomitable || indomitableActive || indomitableConsumed) return;
+
+        // 즉사 방지(최소 1로 보정)
+        if (stats != null)
+            stats.CurrentHealth = Mathf.Max(1f, stats.CurrentHealth);
+
+        indomitableActive = true;
+        indomitableConsumed = true;
+
+        // 지정 시간 무적
+        Mesmerize(duration, Buff.Invincible);
+        // 지정 시간 뒤 강제 사망
+        StartCoroutine(IndomitableRoutine(duration));
+
+        Debug.Log($"[Player] Indomitable TRIGGERED ({duration:F2}s)");
+    }
 
     public void ResetIndomitable(bool clearInvincibility = false)
     {
@@ -334,44 +357,58 @@ public class Player : Unit
         }
     }
 
+    /// <summary>
+    /// 피해 선판정: pending HP가 1 미만이면 불굴 자동 발동(즉사 방지).
+    /// </summary>
     public override void Damage(float amount, Unit source)
     {
-        base.Damage(amount, source);
+        if (IsDead) return;
+        if (isInvincible) { Debug.Log($"{name} 무적: 피해 무시"); return; }
 
-        // 불굴 트리거: HP<=1 이하면 발동시키고 지정 시간 뒤 사망
-        if (enableIndomitable && !indomitableActive && !indomitableConsumed && stats.CurrentHealth <= 1f)
+        amount = Mathf.Max(0f, amount);
+
+        // 피해 전 체력 예측
+        float pendingHp = stats != null ? Mathf.Max(0f, stats.CurrentHealth - amount) : 0f;
+
+        if (enableIndomitable && !indomitableActive && !indomitableConsumed && pendingHp < 1f)
         {
-            indomitableActive = true;
-            indomitableConsumed = true;
-            Mesmerize(indomitableDuration, Buff.Invincible);
-            StartCoroutine(IndomitableRoutine(indomitableDuration));
-            Debug.Log("[Player] Indomitable TRIGGERED");
+            if (source)
+            {
+                var dir = (transform.position - source.transform.position);
+                lastHitDirection = dir.sqrMagnitude > 1e-6f ? (Vector2)dir.normalized : Vector2.zero;
+            }
+            TriggerIndomitable(indomitableDuration);
+            return; // 이번 피해는 소거(즉사 방지)
         }
+
+        base.Damage(amount, source);
     }
 
     IEnumerator IndomitableRoutine(float duration)
     {
         yield return new WaitForSeconds(duration);
         indomitableActive = false;
-        stats.CurrentHealth = 0f;
+        if (stats != null) stats.CurrentHealth = 0f;
         Die();
     }
 
-    // 디버프 일괄 해제
+    // ───────────────── Stats Modifiers 기반 디버프 유틸 ─────────────────
+
+    /// <summary>자기 자신이 건 이동/공격/점프/피해계수 모디파이어 제거</summary>
     public void ClearMoveDebuffsFromSelf()
     {
         var s = GetComponent<StatsBase>();
         if (s == null) return;
+
         s.MoveSpeed.RemoveModifiersBySource(this);
         s.AttackSpeed.RemoveModifiersBySource(this);
         s.MaxJumpHeight.RemoveModifiersBySource(this);
         s.DamageMultiplier.RemoveModifiersBySource(this);
     }
-
-    // ---- 호환성용 별칭(컨트롤러가 ClearExhaustion을 호출하는 경우를 위해) ----
+    // 과거 API 호환
     public void ClearExhaustion() => ClearMoveDebuffsFromSelf();
 
-    // 테스트용 Apply 메서드들
+    // 디버그/테스트용
     public void ApplyExhaustion()
     {
         var s = GetComponent<StatsBase>();
@@ -405,4 +442,3 @@ public class Player : Unit
         s.MaxJumpHeight.AddModifier(new StatModifier { op = StatOp.Mult, value = 0.8f, source = this });
     }
 }
-

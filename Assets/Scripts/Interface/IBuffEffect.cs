@@ -8,7 +8,6 @@ public interface IBuffEffect
 }
 
 // ─── 공용: 넉백/스턴/무적/출혈(기존 로직 유지) ───
-
 public class KnockbackEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
@@ -37,6 +36,49 @@ public class InvincibleEffect : IBuffEffect
     }
 }
 
+public class HitstopEffect : IBuffEffect
+{
+    public void Apply(Unit target, float time, Vector2? dir, float magnitude)
+    {
+        if (time <= 0f) return;
+        // magnitude를 코루틴에 전달
+        target.StartCoroutine(HitstopCoroutine(time, magnitude));
+    }
+
+    private System.Collections.IEnumerator HitstopCoroutine(float duration, float slowScale)
+    {
+        float originalScale = Time.timeScale;
+
+        // 지정값이 있으면 그 값으로(0.01~1 사이로 클램프), 없으면 0.05로 고정
+        float slow = (slowScale > 0f) ? Mathf.Clamp(slowScale, 0.01f, 1f) : 0.05f;
+
+        Time.timeScale = slow;
+        yield return new WaitForSecondsRealtime(duration);
+        Time.timeScale = originalScale;
+    }
+}
+
+
+// 불굴(플레이어 전용 처리)
+//  - Player면 TriggerIndomitable 호출
+//  - Player가 아니면 Invincible 대체(프로젝트 정책에 맞게 조정 가능)
+public class IndomitableEffect : IBuffEffect
+{
+    public void Apply(Unit target, float time, Vector2? dir, float magnitude)
+    {
+        var player = target as Player;
+        if (player != null)
+        {
+            player.TriggerIndomitable(time);
+        }
+        else
+        {
+            // Fallback: 비플레이어에선 무적만 부여
+            if (time > 0f) target.ApplyInvincible(time);
+        }
+    }
+}
+
 public class BleedingEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)
@@ -56,7 +98,6 @@ public class BleedingStackEffect : IBuffEffect
 }
 
 // ─── 플레이어/유닛 공통 스탯에 직접 Modifier로 반영되는 디버프들 ───
-
 public class ExhaustionEffect : IBuffEffect
 {
     public void Apply(Unit target, float time, Vector2? dir, float magnitude)

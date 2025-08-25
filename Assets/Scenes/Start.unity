@@ -592,6 +592,110 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2115835342}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1239836480
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1239836481}
+  - component: {fileID: 1239836483}
+  - component: {fileID: 1239836482}
+  m_Layer: 7
+  m_Name: HitBox Front
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1239836481
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1239836480}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1542632293}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1239836482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1239836480}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbe7f18f4b1522c4582c62f8be87f16f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackerName: Attacker
+  debugLog: 0
+  drawGizmoAlways: 1
+  drawGizmoWhenSelected: 1
+  gizmoFill: {r: 1, g: 0, b: 0, a: 0.12}
+  gizmoLine: {r: 1, g: 0, b: 0, a: 0.9}
+  gizmoArmedLine: {r: 0.25, g: 1, b: 0.25, a: 1}
+  armed: 0
+  mode: 0
+  tickInterval: 0.2
+  ownerUnit: {fileID: 0}
+  ownerStats: {fileID: 0}
+  damage: 10
+  knockback: {x: 6, y: 0}
+--- !u!61 &1239836483
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1239836480}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 1, y: 1}
+  m_EdgeRadius: 0
 --- !u!1 &1542632289
 GameObject:
   m_ObjectHideFlags: 0
@@ -748,10 +852,11 @@ Transform:
   m_GameObject: {fileID: 1542632289}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.56, y: 1.5, z: 0.6}
+  m_LocalPosition: {x: 1.56, y: 1.62, z: 0.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1239836481}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1542632296
@@ -1455,6 +1560,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cfg: {fileID: 0}
   hitbox: {fileID: 2095118199}
+  aimMode: 0
+  attackCamera: {fileID: 0}
 --- !u!114 &2115835344
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1506,8 +1613,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 940d69ceb55c76e41b707982b32876b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 5000
-  currentHealth: 5000
+  maxHealth: 50
+  currentHealth: 50
   deathDestroyDelay: 0.5
   body: {fileID: 0}
   defaultKnockbackForce: 8
@@ -1530,9 +1637,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 357d105936a42d04aa18fcfce7aa6d1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHealth: 100
+  currentHealth: 50
   MaxHealth:
-    base: 5000
+    base: 50
     mods: []
   MoveSpeed:
     base: 1
@@ -1550,7 +1657,7 @@ MonoBehaviour:
     base: 1
     mods: []
   CritChance:
-    base: 1
+    base: 0
     mods: []
   CritDamageMultiplier:
     base: 1.5
