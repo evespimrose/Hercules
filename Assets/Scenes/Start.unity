@@ -907,12 +907,12 @@ MonoBehaviour:
   moveSpeed: 3
   chaseSpeed: 4
   evadeSpeed: 4
-  attackRange: 2.2
+  attackRange: 2.92
   attackCooldown: 1
-  stopChaseRange: 2.1
+  stopChaseRange: 1.4
   detectionRange: 8
   safeDistance: 4
-  chaseStartRange: 3
+  chaseStartRange: 8
   showGizmos: 1
   chaseRangeColor: {r: 0, g: 0, b: 1, a: 1}
   attackRangeColor: {r: 1, g: 0, b: 0, a: 1}
@@ -1598,7 +1598,7 @@ MonoBehaviour:
   cfg: {fileID: 0}
   hitbox: {fileID: 2095118199}
   aimMode: 0
-  attackCamera: {fileID: 0}
+  attackCamera: {fileID: 963194227}
 --- !u!114 &2115835344
 MonoBehaviour:
   m_ObjectHideFlags: 0

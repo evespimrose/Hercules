@@ -94,7 +94,7 @@ public abstract class Unit : MonoBehaviour, IDamageable, IHealable
             lastHitDirection = dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector2.zero;
         }
 
-        Debug.Log($"{name}이(가) {(source ? source.name : "알 수 없음")}에게 {amount} 피해. HP={stats.CurrentHealth}/{stats.MaxHealth.Value}");
+        Debug.Log($"{(source ? source.name : "알 수 없음")}이(가) {name}에게 {amount} 피해. HP={stats.CurrentHealth}/{stats.MaxHealth.Value}");
 
         if (stats.CurrentHealth <= 0f)
             Die();

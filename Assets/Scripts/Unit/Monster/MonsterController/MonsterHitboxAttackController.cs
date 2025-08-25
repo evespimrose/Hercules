@@ -3,62 +3,62 @@ using UnityEngine;
 using Hercules.StatsSystem;
 
 /// <summary>
-/// BT/¾Ö´Ï¸ŞÀÌ¼Ç¿¡¼­ È£ÃâÇÏ±â À§ÇÑ È÷Æ®¹Ú½º ºê¸´Áö.
-/// - ±âÁ¸ BT°¡ DealDamage¸¦ Á÷Á¢ È£ÃâÇÏ´ø ºÎºĞÀ» Arm/Disarm ±â¹İÀ¸·Î Ä¡È¯
-/// - ¾Ö´Ï ÀÌº¥Æ®/BT Å¸ÀÌ¹Ö¿¡¼­ Attack_Activate()/Attack_Deactivate()¸¸ È£ÃâÇØµµ µÇ°í,
-///   TryAttackOnce() ÇÏ³ª·Î ½ºÅ¸Æ®¾÷~¾×Æ¼ºê~¸®Ä¿¹ö¸®~Äğ´Ù¿î±îÁö ÀÚµ¿ ½ÇÇàµµ °¡´É.
+/// BT/ï¿½Ö´Ï¸ï¿½ï¿½Ì¼Ç¿ï¿½ï¿½ï¿½ È£ï¿½ï¿½ï¿½Ï±ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ®ï¿½Ú½ï¿½ ï¿½ê¸´ï¿½ï¿½.
+/// - ï¿½ï¿½ï¿½ï¿½ BTï¿½ï¿½ DealDamageï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ È£ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½Îºï¿½ï¿½ï¿½ Arm/Disarm ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ä¡È¯
+/// - ï¿½Ö´ï¿½ ï¿½Ìºï¿½Æ®/BT Å¸ï¿½Ì¹Ö¿ï¿½ï¿½ï¿½ Attack_Activate()/Attack_Deactivate()ï¿½ï¿½ È£ï¿½ï¿½ï¿½Øµï¿½ ï¿½Ç°ï¿½,
+///   TryAttackOnce() ï¿½Ï³ï¿½ï¿½ï¿½ ï¿½ï¿½Å¸Æ®ï¿½ï¿½~ï¿½ï¿½Æ¼ï¿½ï¿½~ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½~ï¿½ï¿½Ù¿ï¿½ï¿½ï¿½ï¿½ ï¿½Úµï¿½ ï¿½ï¿½ï¿½àµµ ï¿½ï¿½ï¿½ï¿½.
 /// </summary>
 [DisallowMultipleComponent]
 public class MonsterHitboxAttackController : MonoBehaviour
 {
     [Header("References")]
-    [Tooltip("ÀÚ½Ä ¿ÀºêÁ§Æ®¿¡ ÀÖ´Â Hitbox ÄÄÆ÷³ÍÆ®¸¦ ÇÒ´ç (BoxCollider2D isTrigger=true ÇÊ¼ö)")]
+    [Tooltip("ï¿½Ú½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½Ö´ï¿½ Hitbox ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½Ò´ï¿½ (BoxCollider2D isTrigger=true ï¿½Ê¼ï¿½)")]
     public Hitbox hitbox;
 
     private Unit self;
     private StatsBase stats;
 
     [Header("Attack Numbers")]
-    [Tooltip("CombatMath¿¡ Àü´ŞµÇ´Â baseDamage")]
+    [Tooltip("CombatMathï¿½ï¿½ ï¿½ï¿½ï¿½ŞµÇ´ï¿½ baseDamage")]
     public float baseDamage = 10f;
-    [Tooltip("³Ë¹é Èû(È÷Æ®¹Ú½º°¡ X¼ººĞÀ» force·Î »ç¿ë)")]
+    [Tooltip("ï¿½Ë¹ï¿½ ï¿½ï¿½(ï¿½ï¿½Æ®ï¿½Ú½ï¿½ï¿½ï¿½ Xï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ forceï¿½ï¿½ ï¿½ï¿½ï¿½)")]
     public float knockback = 6f;
     public Hitbox.HitMode mode = Hitbox.HitMode.Single;
 
     [Header("Timings (seconds)")]
-    public float startup = 0.08f;    // ¿¹¿­
-    public float active = 0.12f;     // ÆÇÁ¤ on ±¸°£
-    public float recovery = 0.20f;   // ÈÄµô
-    public float cooldown = 0.35f;   // Äğ´Ù¿î (TryAttackOnce Àü¿ë)
+    public float startup = 0.08f;    // ï¿½ï¿½ï¿½ï¿½
+    public float active = 0.12f;     // ï¿½ï¿½ï¿½ï¿½ on ï¿½ï¿½ï¿½ï¿½
+    public float recovery = 0.20f;   // ï¿½Äµï¿½
+    public float cooldown = 0.35f;   // ï¿½ï¿½Ù¿ï¿½ (TryAttackOnce ï¿½ï¿½ï¿½ï¿½)
 
     [Header("Options")]
     public bool logDebug = false;
 
-    private bool _busy;     // TryAttackOnce Áß
-    private bool _cooling;  // Äğ´Ù¿î Áß
+    private bool _busy;     // TryAttackOnce ï¿½ï¿½
+    private bool _cooling;  // ï¿½ï¿½Ù¿ï¿½ ï¿½ï¿½
 
     void Awake()
     {
         if (!hitbox)
         {
-            // ÀÚ½Ä¿¡¼­ ÀÚµ¿ Å½»ö
+            // ï¿½Ú½Ä¿ï¿½ï¿½ï¿½ ï¿½Úµï¿½ Å½ï¿½ï¿½
             hitbox = GetComponentInChildren<Hitbox>(includeInactive: true);
             if (!hitbox) Debug.LogError($"{name}: Hitbox reference is missing.");
         }
 
         self = GetComponent<Unit>();
         stats = GetComponent<StatsBase>();
-        if (!stats) stats = gameObject.AddComponent<StatsBase>(); // °úµµ±â ¾ÈÀüÀåÄ¡
+        if (!stats) stats = gameObject.AddComponent<StatsBase>(); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¡
 
         if (hitbox) hitbox.Disarm();
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ¨ç ¾Ö´Ï/BT°¡ ÇÁ·¹ÀÓ Å¸ÀÌ¹ÖÀ» Á÷Á¢ Á¦¾îÇÏ´Â ¹æ½Ä
-    //    (¾Ö´Ï ÀÌº¥Æ®·Î ¾×Æ¼ºê ½ÃÀÛ/Á¾·á ÇÁ·¹ÀÓ¿¡ ¿¬°á)
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // ï¿½ï¿½ ï¿½Ö´ï¿½/BTï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½Ì¹ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½
+    //    (ï¿½Ö´ï¿½ ï¿½Ìºï¿½Æ®ï¿½ï¿½ ï¿½ï¿½Æ¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿ï¿½ ï¿½ï¿½ï¿½ï¿½)
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-    /// <summary>¾×Æ¼ºê ÇÁ·¹ÀÓ ½ÃÀÛ: È÷Æ®¹Ú½º On</summary>
+    /// <summary>ï¿½ï¿½Æ¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½Æ®ï¿½Ú½ï¿½ On</summary>
     public void Attack_Activate()
     {
         if (!hitbox || !self || !stats) return;
@@ -66,7 +66,7 @@ public class MonsterHitboxAttackController : MonoBehaviour
         if (logDebug) Debug.Log($"[{name}] Attack_Activate (Arm)");
     }
 
-    /// <summary>¾×Æ¼ºê ÇÁ·¹ÀÓ Á¾·á: È÷Æ®¹Ú½º Off</summary>
+    /// <summary>ï¿½ï¿½Æ¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½Æ®ï¿½Ú½ï¿½ Off</summary>
     public void Attack_Deactivate()
     {
         if (!hitbox) return;
@@ -74,15 +74,22 @@ public class MonsterHitboxAttackController : MonoBehaviour
         if (logDebug) Debug.Log($"[{name}] Attack_Deactivate (Disarm)");
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ¨è ÇÑ ¹ø È£Ãâ·Î ½ºÅ¸Æ®¾÷~¾×Æ¼ºê~¸®Ä¿¹ö¸®~Äğ´Ù¿î ÀÚµ¿ ½ÇÇà
-    //    (BTÀÇ ±âÁ¸ DealDamage È£Ãâ À§Ä¡¸¦ TryAttackOnce·Î ±³Ã¼)
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ È£ï¿½ï¿½ï¿½ ï¿½ï¿½Å¸Æ®ï¿½ï¿½~ï¿½ï¿½Æ¼ï¿½ï¿½~ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½~ï¿½ï¿½Ù¿ï¿½ ï¿½Úµï¿½ ï¿½ï¿½ï¿½ï¿½
+    //    (BTï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ DealDamage È£ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ TryAttackOnceï¿½ï¿½ ï¿½ï¿½Ã¼)
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
     public void TryAttackOnce()
     {
         if (!_busy && !_cooling)
             StartCoroutine(AttackRoutine());
+    }
+
+    // attackRangeì™€ íƒ€ê²Ÿì„ ì „ë‹¬ë°›ì•„ ì‹¤ì œ íˆíŠ¸ê°€ ë²”ìœ„ ë‚´ì—ì„œë§Œ ë°œìƒí•˜ë„ë¡ ë³´ì¥
+    public void TryAttackOnce(float maxRange, Transform target)
+    {
+        if (!_busy && !_cooling)
+            StartCoroutine(AttackRoutineWithRange(maxRange, target));
     }
 
     private IEnumerator AttackRoutine()
@@ -114,6 +121,60 @@ public class MonsterHitboxAttackController : MonoBehaviour
         _busy = false;
 
         // Cooldown
+        if (cooldown > 0f)
+        {
+            _cooling = true;
+            yield return new WaitForSeconds(cooldown);
+            _cooling = false;
+        }
+    }
+
+    private IEnumerator AttackRoutineWithRange(float maxRange, Transform target)
+    {
+        _busy = true;
+
+        // Startup ì „ ë¹ ë¥¸ ê±°ë¦¬ ì²´í¬
+        if (target == null || self == null)
+        {
+            _busy = false;
+            yield break;
+        }
+
+        if (startup > 0f) yield return new WaitForSeconds(startup);
+
+        // Active (On) ì§ì „ ê±°ë¦¬ ì¬í™•ì¸ - ë²”ìœ„ë¥¼ ë²—ì–´ë‚˜ë©´ ê³µê²© ìƒëµ
+        if (target == null || self == null)
+        {
+            _busy = false;
+            yield break;
+        }
+
+        float dist = Vector2.Distance(self.transform.position, target.position);
+        if (dist <= maxRange)
+        {
+            if (hitbox && self && stats)
+            {
+                hitbox.Arm(self, stats, baseDamage, new Vector2(knockback, 0f), mode);
+                if (logDebug) Debug.Log($"[{name}] Arm() -> active {active:0.###}s (range ok: {dist:0.##} <= {maxRange:0.##})");
+            }
+
+            if (active > 0f) yield return new WaitForSeconds(active);
+
+            if (hitbox)
+            {
+                hitbox.Disarm();
+                if (logDebug) Debug.Log($"[{name}] Disarm()");
+            }
+        }
+        else if (logDebug)
+        {
+            Debug.Log($"[{name}] Attack skipped (out of range: {dist:0.##} > {maxRange:0.##})");
+        }
+
+        if (recovery > 0f) yield return new WaitForSeconds(recovery);
+
+        _busy = false;
+
         if (cooldown > 0f)
         {
             _cooling = true;
