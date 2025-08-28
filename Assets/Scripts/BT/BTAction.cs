@@ -192,7 +192,9 @@ public class AttackAction : BTNode
             // 공격 실행 조건 만족 시 공격 상태 활성화
             bool previousAttack = bb.attack;
             bb.attack = true;
-            
+
+            Debug.Log($"[BT] AttackAction: 공격 범위 만족 - 공격 상태 활성화 (목표와의 거리: {dist:F2}, 현재 범위: {currentAttackRange:F2})");
+
             // 공격 실행 시 로그
             if (!previousAttack)
                 // Debug.Log($"[BT] AttackAction: 공격 실행! (거리: {dist:F2}, 범위: {currentAttackRange:F2})");
