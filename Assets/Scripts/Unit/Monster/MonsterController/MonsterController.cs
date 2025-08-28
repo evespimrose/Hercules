@@ -5,386 +5,170 @@ using UnityEngine;
 public class MonsterController : MonoBehaviour
 {
     [Header("Movement Settings")]
-    [Range(0.1f, 10f)]
-    public float moveSpeed = 3f;
-    [Range(0.1f, 10f)]
-    public float chaseSpeed = 4f;
-    [Range(0.1f, 10f)]
-    public float evadeSpeed = 4f;
-    
+    [Range(0.1f, 10f)] public float moveSpeed = 3f;
+    [Range(0.1f, 10f)] public float chaseSpeed = 4f;
+    [Range(0.1f, 10f)] public float evadeSpeed = 4f;
+
     [Header("Combat Settings")]
-    [Range(0.1f, 5f)]
-    public float attackRange = 2.2f;  // 1.5f에서 2.2f로 증가
-    [Range(0.1f, 5f)]
-    public float attackCooldown = 1f;
-    [Range(0.1f, 5f)]
-    public float stopChaseRange = 2.1f;  // 추적 종료 범위 (공격 범위보다 약간 작게)
-    
+    [Range(0.1f, 20f)] public float attackRange = 2.2f;   // 빨간 원(센서)의 반경
+    [Range(0.05f, 5f)] public float attackCooldown = 1f;
+    [Range(0.1f, 20f)] public float stopChaseRange = 2.1f;
+
     [Header("AI Settings")]
-    [Range(1f, 20f)]
-    public float detectionRange = 8f;
-    [Range(0.5f, 10f)]
-    public float safeDistance = 4f;
-    [Range(0.1f, 20f)]
-    public float chaseStartRange = 3.0f; // 추적 시작 범위
-    
+    [Range(1f, 30f)] public float detectionRange = 8f;
+    [Range(0.5f, 10f)] public float safeDistance = 4f;
+    [Range(0.1f, 30f)] public float chaseStartRange = 3.0f;
+
     [Header("Gizmo Settings")]
     [SerializeField] private bool showGizmos = true;
     [SerializeField] private Color chaseRangeColor = Color.blue;
     [SerializeField] private Color attackRangeColor = Color.red;
-    [SerializeField] private Color stopChaseRangeColor = Color.cyan;  // 추적 중지 범위 색상 추가
+    [SerializeField] private Color stopChaseRangeColor = Color.cyan;
     [SerializeField] private Color evadeRangeColor = Color.yellow;
     [SerializeField] private Color detectionRangeColor = Color.green;
-    
+
+    // === 추가: 센서 참조 ===
+    [Header("Sensor")]
+    public AttackRangeSensor attackSensor;     // Monster/AttackRange 에 붙임
+
     private Monster monster;
     private MonsterBT monsterBT;
     private Rigidbody2D rb;
     private Transform target;
     private float lastAttackTime;
-    
-    // AI 상태 (BT에서 받아올 상태들)
+
     private bool isChasing = false;
     private bool isEvading = false;
     private bool canAttack = false;
-    
+
     void Start()
     {
         monster = GetComponent<Monster>();
         monsterBT = GetComponent<MonsterBT>();
-        
-        // Monster의 Rigidbody2D 사용
-        if (monster != null)
-        {
-            rb = monster.Rigidbody;
-        }
-        
-        if (rb == null)
-        {
-            Debug.LogError($"{name}에 Rigidbody2D가 없습니다!");
-            return;
-        }
-        
-        // MonsterBT가 없다면 경고
-        if (monsterBT == null)
-        {
-            Debug.LogWarning($"{name}에 MonsterBT 컴포넌트가 없습니다!");
-        }
-        
-        // 플레이어 찾기 (임시, 나중에 GameManager나 다른 방법으로 개선)
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+
+        if (monster != null) rb = monster.Rigidbody;
+        if (rb == null) { Debug.LogError($"{name}에 Rigidbody2D가 없습니다!"); return; }
+
+        if (!attackSensor) attackSensor = GetComponentInChildren<AttackRangeSensor>(true);
+
+        // 플레이어 찾기
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player)
         {
             target = player.transform;
-            // MonsterBT의 타겟도 설정
             if (monsterBT != null)
             {
                 monsterBT.target = target;
-                monsterBT.bb.target = target;
+                if (monsterBT.bb != null) monsterBT.bb.target = target;
             }
         }
-        
-        // 공격 쿨다운 초기화
-        lastAttackTime = -attackCooldown; // 첫 공격을 즉시 할 수 있도록 설정
+
+        lastAttackTime = -attackCooldown;
     }
-    
+
     void Update()
     {
         if (target == null) return;
-        
-        // BT의 상태를 읽어와서 실제 행동으로 변환
+
+        // 센서가 있다면 반경 자동 동기화
+        if (attackSensor && attackSensor.syncRadiusWithController)
+            attackSensor.SetRadius(attackRange);
+
         ReadBTState();
         ExecuteActions();
     }
-    
+
+    // 외부(BTAction)에서 사용: 센서 기반 범위 체크
+    public bool IsTargetInAttackRange(Transform t)
+    {
+        if (!t) return false;
+        if (attackSensor) return attackSensor.InRangeOf(t);
+        return Vector2.Distance(t.position, transform.position) <= attackRange;
+    }
+
     void ReadBTState()
     {
         if (monsterBT == null || monsterBT.bb == null) return;
-        
-        // BT의 블랙보드에서 상태 읽기
         var bb = monsterBT.bb;
-        
-        // 상태 변경 감지 및 로그 출력
-        if (isChasing != bb.moveChase)
-        {
-            isChasing = bb.moveChase;
-            //if (isChasing)
-            //    Debug.Log($"[{name}] BT 상태 전환: 추적 모드 시작");
-            //else
-            //    Debug.Log($"[{name}] BT 상태 전환: 추적 모드 종료");
-        }
-        
-        if (isEvading != bb.moveEvade)
-        {
-            isEvading = bb.moveEvade;
-            //if (isEvading)
-            //    Debug.Log($"[{name}] BT 상태 전환: 회피 모드 시작");
-            //else
-            //    Debug.Log($"[{name}] BT 상태 전환: 회피 모드 종료");
-        }
-        
-        if (canAttack != bb.attack)
-        {
-            canAttack = bb.attack;
-            //if (canAttack)
-            //    Debug.Log($"[{name}] BT 상태 전환: 공격 가능 상태");
-            //else
-            //    Debug.Log($"[{name}] BT 상태 전환: 공격 불가 상태");
-            }
-        
-        // 타겟이 변경되었는지 확인
-        if (bb.target != target)
-        {
-            target = bb.target;
-            //if (target != null)
-            //    Debug.Log($"[{name}] BT 타겟 변경: {target.name}");
-        }
+
+        if (isChasing != bb.moveChase) isChasing = bb.moveChase;
+        if (isEvading != bb.moveEvade) isEvading = bb.moveEvade;
+        if (canAttack != bb.attack) canAttack = bb.attack;
+
+        if (bb.target != target) target = bb.target;
     }
-    
+
     void ExecuteActions()
     {
-        // 이동 처리
-        if (isChasing)
+        if (isChasing) MoveTowardsTarget(chaseSpeed);
+        else if (isEvading) MoveAwayFromTarget(evadeSpeed);
+        else StopMovement();
+
+        // 센서가 “범위 안”이라고 판단해야만 공격
+        bool inRange = IsTargetInAttackRange(target);
+
+        if (canAttack && inRange)
         {
-            MoveTowardsTarget(chaseSpeed);
+            float elapsed = Time.time - lastAttackTime;
+            if (elapsed >= attackCooldown) Attack();
         }
-        else if (isEvading)
-        {
-            MoveAwayFromTarget(evadeSpeed);
-        }
-        else
-        {
-            // 정지
-            StopMovement();
-        }
-        
-        // 공격 처리 - 디버그 로그 추가
-        if (canAttack)
-        {
-            float timeSinceLastAttack = Time.time - lastAttackTime;
-            if (timeSinceLastAttack >= attackCooldown)
-            {
-                //Debug.Log($"[{name}] 공격 조건 만족: canAttack={canAttack}, 쿨다운={timeSinceLastAttack:F2}/{attackCooldown}");
-                Attack();
-            }
-            else
-            {
-                // 쿨다운 중일 때 로그 (너무 자주 출력되지 않도록)
-                //if (Time.frameCount % 120 == 0) // 120프레임마다 한 번씩
-                //{
-                //    Debug.Log($"[{name}] 공격 대기 중: 쿨다운 {timeSinceLastAttack:F2}/{attackCooldown}");
-                //}
-            }
-        }
-        //else
-        //{
-        //    // 공격 불가 상태일 때 로그 (너무 자주 출력되지 않도록)
-        //    if (Time.frameCount % 120 == 0) // 120프레임마다 한 번씩
-        //    {
-        //        Debug.Log($"[{name}] 공격 불가: canAttack={canAttack}");
-        //    }
-        //}
     }
-    
+
     void MoveTowardsTarget(float speed)
     {
-        Vector2 direction = (target.position - transform.position).normalized;
-        rb.velocity = direction * speed;
-        
-        // 이동 로그 (너무 자주 출력되지 않도록 제한)
-        //if (Time.frameCount % 60 == 0) // 60프레임마다 한 번씩
-        //{
-        //    Debug.Log($"[{name}] 실제 행동: 추적 이동 중 (속도: {speed}, 방향: {direction})");
-        //}
+        Vector2 dir = (target.position - transform.position).normalized;
+        rb.velocity = dir * speed;
     }
-    
+
     void MoveAwayFromTarget(float speed)
     {
-        Vector2 direction = (transform.position - target.position).normalized;
-        rb.velocity = direction * speed;
-        
-        // 이동 로그 (너무 자주 출력되지 않도록 제한)
-        //if (Time.frameCount % 60 == 0) // 60프레임마다 한 번씩
-        //{
-        //    Debug.Log($"[{name}] 실제 행동: 회피 이동 중 (속도: {speed}, 방향: {direction})");
-        //}
+        Vector2 dir = (transform.position - target.position).normalized;
+        rb.velocity = dir * speed;
     }
-    
+
     void StopMovement()
     {
-        //if (rb.velocity.sqrMagnitude > 0.01f) // 정지 상태가 아닐 때만 로그
-        //{
-        //    Debug.Log($"[{name}] 실제 행동: 이동 정지");
-        //}
         rb.velocity = Vector2.zero;
     }
-    
+
     void Attack()
     {
         if (target == null) return;
-        
-        // 공격 실행
+
         lastAttackTime = Time.time;
-        
-        //Debug.Log($"[{name}] ===== 공격 실행! =====");
-        //Debug.Log($"[{name}] 공격자: {name} (HP: {monster?.currentHealth}/{monster?.maxHealth})");
-        //Debug.Log($"[{name}] 공격 대상: {target.name}");
-        //Debug.Log($"[{name}] 공격력: 10");
-        //Debug.Log($"[{name}] 공격 위치: {transform.position}");
-        //Debug.Log($"[{name}] 타겟 위치: {target.position}");
-        //Debug.Log($"[{name}] 공격 거리: {Vector2.Distance(transform.position, target.position):F2}");
-        
-        // Monster의 DealDamage 메서드 호출
-        if (monster != null)
-        {
-            Unit targetUnit = target.GetComponent<Unit>();
-            if (targetUnit != null)
-            {
-                //monster.DealDamage(targetUnit, 10f); // 기본 공격력 10
-                GetComponent<MonsterHitboxAttackController>().TryAttackOnce(attackRange, target);
 
-                //Debug.Log($"[{name}] 공격 결과: {target.name}에게 10 피해 적용 완료");
-            }
-            //else
-            //{
-            //    Debug.LogWarning($"[{name}] 공격 실패: {target.name}에 Unit 컴포넌트가 없음");
-            //}
-        }
-        //else
-        //{
-        //    Debug.LogError($"[{name}] 공격 실패: Monster 컴포넌트가 없음");
-        //}
-        
-        // Debug.Log($"[{name}] ===== 공격 완료 =====");
-    }
-    
-    // 외부에서 호출할 수 있는 공개 메서드들
-    public void SetTarget(Transform newTarget)
-    {
-        target = newTarget;
-        if (monsterBT != null && monsterBT.bb != null)
+        var targetUnit = target.GetComponent<Unit>();
+        if (targetUnit != null)
         {
-            monsterBT.bb.target = newTarget;
+            var ctrl = GetComponent<MonsterHitboxAttackController>();
+            if (ctrl && !ctrl.IsBusyOrCooling)
+                ctrl.TryAttackOnce(); // 히트박스가 Arm/Disarm 됨
         }
-    }
-    
-    public void SetMoveSpeed(float speed)
-    {
-        moveSpeed = speed;
-    }
-    
-    // [추가] 추적 중지 범위 설정 메서드
-    public void SetStopChaseRange(float range)
-    {
-        stopChaseRange = Mathf.Clamp(range, 0.1f, attackRange - 0.1f); // 공격 범위보다 작게 제한
-        Debug.Log($"[{name}] 추적 중지 범위 변경: {stopChaseRange:F2}");
-    }
-    
-    // [추가] 공격 범위 설정 메서드 (추적 중지 범위와의 관계 유지)
-    public void SetAttackRange(float range)
-    {
-        // stopChaseRange보다 크고 chaseStartRange보다 작도록 Clamp
-        float min = stopChaseRange + 0.1f;
-        float max = chaseStartRange - 0.1f;
-        if (max < min) max = min + 0.1f;
-        attackRange = Mathf.Clamp(range, min, max);
-        Debug.Log($"[{name}] 공격 범위 변경: {attackRange:F2}");
     }
 
-    // [추가] 추적 시작 범위 설정 메서드 (관계 보존)
-    public void SetChaseStartRange(float range)
-    {
-        // attackRange보다 크고 detectionRange보다 작도록 Clamp
-        float min = attackRange + 0.1f;
-        float max = detectionRange;
-        if (max < min) max = min + 0.1f;
-        chaseStartRange = Mathf.Clamp(range, min, max);
-        Debug.Log($"[{name}] 추적 시작 범위 변경: {chaseStartRange:F2}");
-    }
-    
-    // BT 상태를 외부에서 설정할 수 있는 메서드들
-    public void SetBTState(bool chase, bool evade, bool attack)
-    {
-        if (monsterBT != null && monsterBT.bb != null)
-        {
-            monsterBT.bb.moveChase = chase;
-            monsterBT.bb.moveEvade = evade;
-            monsterBT.bb.attack = attack;
-        }
-    }
-    
-    public bool IsChasing => isChasing;
-    public bool IsEvading => isEvading;
-    public bool CanAttack => canAttack;
-    public Transform CurrentTarget => target;
-    
-    // 기즈모 그리기
+
+    // --- (기즈모) ---
     void OnDrawGizmos()
     {
         if (!showGizmos) return;
-        
-        Vector3 center = transform.position;
-        
-        // 추적 범위 (detectionRange)
-        Gizmos.color = detectionRangeColor;
-        Gizmos.DrawWireSphere(center, detectionRange);
-        
-        // 공격 범위
-        Gizmos.color = attackRangeColor;
-        Gizmos.DrawWireSphere(center, attackRange);
-        
-        // 추적 중지 범위 (stopChaseRange)
-        Gizmos.color = stopChaseRangeColor;
-        Gizmos.DrawWireSphere(center, stopChaseRange);
-        
-        // 회피 판단 범위 (safeDistance)
-        Gizmos.color = evadeRangeColor;
-        Gizmos.DrawWireSphere(center, safeDistance);
-        
-        // 추적 시작 범위 (chaseStartRange)
-        Gizmos.color = chaseRangeColor;
-        Gizmos.DrawWireSphere(center, chaseStartRange);
-        
-        // 타겟이 있을 때 방향 표시
-        if (target != null)
-        {
-            Gizmos.color = Color.white;
-            Gizmos.DrawLine(center, target.position);
-            
-            // 현재 거리 표시
-            float distance = Vector2.Distance(center, target.position);
-            Vector3 labelPos = (center + target.position) * 0.5f;
-            #if UNITY_EDITOR
-            UnityEditor.Handles.Label(labelPos, $"거리: {distance:F2}");
-            #endif
-        }
+        Vector3 c = transform.position;
+
+        Gizmos.color = detectionRangeColor; Gizmos.DrawWireSphere(c, detectionRange);
+        Gizmos.color = attackRangeColor; Gizmos.DrawWireSphere(c, attackRange);
+        Gizmos.color = stopChaseRangeColor; Gizmos.DrawWireSphere(c, stopChaseRange);
+        Gizmos.color = evadeRangeColor; Gizmos.DrawWireSphere(c, safeDistance);
+        Gizmos.color = chaseRangeColor; Gizmos.DrawWireSphere(c, chaseStartRange);
     }
-    
-    // 선택된 오브젝트일 때만 기즈모 표시 (Scene 뷰에서 더 잘 보임)
+
     void OnDrawGizmosSelected()
     {
         if (!showGizmos) return;
-        
-        Vector3 center = transform.position;
-        
-        // 선택된 오브젝트일 때는 반투명한 구체로 표시
-        // 추적 범위
-        Gizmos.color = new Color(detectionRangeColor.r, detectionRangeColor.g, detectionRangeColor.b, 0.1f);
-        Gizmos.DrawSphere(center, detectionRange);
-        
-        // 공격 범위
-        Gizmos.color = new Color(attackRangeColor.r, attackRangeColor.g, attackRangeColor.b, 0.1f);
-        Gizmos.DrawSphere(center, attackRange);
-        
-        // 추적 중지 범위
-        Gizmos.color = new Color(stopChaseRangeColor.r, stopChaseRangeColor.g, stopChaseRangeColor.b, 0.1f);
-        Gizmos.DrawSphere(center, stopChaseRange);
-        
-        // 회피 판단 범위
-        Gizmos.color = new Color(evadeRangeColor.r, evadeRangeColor.g, evadeRangeColor.b, 0.1f);
-        Gizmos.DrawSphere(center, safeDistance);
-        
-        // 추적 시작 범위
-        Gizmos.color = new Color(chaseRangeColor.r, chaseRangeColor.g, chaseRangeColor.b, 0.1f);
-        Gizmos.DrawSphere(center, chaseStartRange);
+        Vector3 c = transform.position;
+
+        Gizmos.color = new Color(detectionRangeColor.r, detectionRangeColor.g, detectionRangeColor.b, 0.1f); Gizmos.DrawSphere(c, detectionRange);
+        Gizmos.color = new Color(attackRangeColor.r, attackRangeColor.g, attackRangeColor.b, 0.1f); Gizmos.DrawSphere(c, attackRange);
+        Gizmos.color = new Color(stopChaseRangeColor.r, stopChaseRangeColor.g, stopChaseRangeColor.b, 0.1f); Gizmos.DrawSphere(c, stopChaseRange);
+        Gizmos.color = new Color(evadeRangeColor.r, evadeRangeColor.g, evadeRangeColor.b, 0.1f); Gizmos.DrawSphere(c, safeDistance);
+        Gizmos.color = new Color(chaseRangeColor.r, chaseRangeColor.g, chaseRangeColor.b, 0.1f); Gizmos.DrawSphere(c, chaseStartRange);
     }
 }

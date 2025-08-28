@@ -149,6 +149,12 @@ public class Hitbox : MonoBehaviour
 
     private bool TryApplyHit(Collider2D other, bool respectTick)
     {
+        // ▶ 센서(빨간 원)와는 절대 상호작용하지 않도록 하드 차단
+        if (other.GetComponent<AttackRangeSensor>() || other.GetComponentInParent<AttackRangeSensor>())
+            return false;
+        int sensorLayer = LayerMask.NameToLayer("MonsterSense");
+        if (sensorLayer >= 0 && other.gameObject.layer == sensorLayer) return false;
+
         // 1) 대상 Unit 찾기
         Unit targetUnit =
                other.GetComponentInParent<Unit>()
