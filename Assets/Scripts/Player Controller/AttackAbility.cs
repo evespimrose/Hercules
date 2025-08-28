@@ -6,6 +6,7 @@ using Hercules.StatsSystem;
 public class AttackAbility : MonoBehaviour
 {
     public enum AttackAimMode { Facing, Mouse }   // 전방/마우스 방향 스위치
+    public enum RangeScaleMode { Multiply, Additive, Level } // 미세 조절 모드
 
     [Header("Config (ScriptableObject)")]
     public AttackConfig cfg;
@@ -14,7 +15,7 @@ public class AttackAbility : MonoBehaviour
     public Hitbox hitbox; // 자식 히트박스(Trigger Collider)
 
     [Header("Aim")]
-    [Tooltip("Facing: WASD 기반 전방 / Mouse: 마우스 방향 (사거리는 고정)")]
+    [Tooltip("Facing: WASD 기반 전방 / Mouse: 마우스 방향")]
     public AttackAimMode aimMode = AttackAimMode.Facing;
 
     [Tooltip("명시적으로 사용할 카메라(비어있으면 Camera.main)")]
@@ -33,6 +34,39 @@ public class AttackAbility : MonoBehaviour
     public bool onHitHitstop = false;
     public float onHitHitstopTime = 0.05f;
     public float onHitHitstopScale = 0.05f;
+
+    [Header("Range Control")]
+    [Tooltip("사거리/판정 크기를 코드에서 간단히 조절")]
+    public bool overrideRange = false;
+
+    [Tooltip("미세 조절 방식: 배수 / 가산 / 레벨 스텝")]
+    public RangeScaleMode rangeMode = RangeScaleMode.Multiply;
+
+    // Multiply 모드용
+    [Tooltip("오프셋(전진 거리) 배수")]
+    public float rangeOffsetMul = 1f;
+    [Tooltip("히트박스 가로/세로 크기 배수")]
+    public float rangeSizeMulX = 1f;
+    public float rangeSizeMulY = 1f;
+
+    // Additive 모드용
+    [Tooltip("오프셋(전진 거리) 가산값(+m)")]
+    public float rangeOffsetAdd = 0f;
+    [Tooltip("히트박스 가로/세로 가산값(+m)")]
+    public float rangeSizeAddX = 0f;
+    public float rangeSizeAddY = 0f;
+
+    // Level 모드용
+    [Tooltip("레벨 단계(정수). 레벨당 step만큼 증가")]
+    public int rangeLevel = 0;
+    [Tooltip("레벨 1단계당 오프셋 증가량(+m)")]
+    public float levelOffsetStep = 0.15f;
+    [Tooltip("레벨 1단계당 가로/세로 크기 증가량(+m)")]
+    public float levelSizeStepX = 0.15f;
+    public float levelSizeStepY = 0.00f;
+
+    [Tooltip("크기 확장 시 뒤쪽(플레이어 쪽) 가장자리를 고정하고 앞쪽으로만 늘림")]
+    public bool forwardOnlyRangeScale = true;
 
     CharacterMotor2D motor;
     Unit ownerUnit;
@@ -121,9 +155,21 @@ public class AttackAbility : MonoBehaviour
         if (hitbox)
         {
             var box = hitbox.GetComponent<BoxCollider2D>();
-            if (box && cfg) box.size = cfg.hitboxSize;
 
-            Vector2 off = cfg ? cfg.hitboxOffset : Vector2.right; // +X 기준 오프셋
+            // ===== 기본값 =====
+            Vector2 baseSize = cfg ? cfg.hitboxSize : new Vector2(1f, 1f);
+            Vector2 baseOffset = cfg ? cfg.hitboxOffset : new Vector2(0.8f, 0f);
+
+            // ===== 크기/오프셋 계산(미세 조절) =====
+            Vector2 finalSize;
+            float finalOffsetX;
+            ComputeRange(baseSize, baseOffset, out finalSize, out finalOffsetX);
+
+            if (box)
+            {
+                box.size = finalSize;
+                box.offset = new Vector2(finalOffsetX, baseOffset.y);
+            }
 
             // ── 조준 방향
             Vector2 dir;
@@ -133,7 +179,6 @@ public class AttackAbility : MonoBehaviour
             }
             else
             {
-                // Facing: WASD 규칙으로 계산된 lastFacingDir 사용
                 dir = (lastFacingDir.sqrMagnitude > 0.0001f) ? lastFacingDir : Vector2.right;
             }
 
@@ -142,20 +187,16 @@ public class AttackAbility : MonoBehaviour
 
             // 상위 체인 X 미러 보정(좌우 반전된 부모 스케일 대응)
             if (IsMirroredX(hitbox.transform))
-            {
                 ang = 180f - ang;
-            }
 
-            // 회전만 적용(중심 이동 없음). 사거리 자체는 고정: offset.x의 절댓값을 사용
+            // 회전 적용(중심 이동 없음, 오프셋은 로컬 +X 기준)
             hitbox.transform.localRotation = Quaternion.Euler(0f, 0f, ang);
-            if (box)
-                box.offset = new Vector2(Mathf.Abs(off.x), off.y);
 
             // ===== Arm → 활성 구간 =====
             float baseDamage = (cfg ? cfg.damage : 10f);
             Vector2 kb = new Vector2(cfg ? cfg.knockback : 6f, 0f);
 
-            // ★ 이 한 줄로 “이번 공격”의 on-hit 출혈 옵션을 확실히 적용(선택)
+            // on-hit 옵션 덮어쓰기
             if (overrideOnHitOptions)
             {
                 hitbox.applyBleeding = onHitBleeding;
@@ -197,10 +238,57 @@ public class AttackAbility : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
+    // Range 계산 (공격 전용)
+    // ─────────────────────────────────────────────────────────────
+    void ComputeRange(Vector2 baseSize, Vector2 baseOffset, out Vector2 outSize, out float outOffsetX)
+    {
+        Vector2 size = baseSize;
+        float offsetX = Mathf.Abs(baseOffset.x); // 앞(로컬 +X)만 사용
+
+        if (overrideRange)
+        {
+            switch (rangeMode)
+            {
+                case RangeScaleMode.Multiply:
+                    size = new Vector2(
+                        baseSize.x * Mathf.Max(0.01f, rangeSizeMulX),
+                        baseSize.y * Mathf.Max(0.01f, rangeSizeMulY)
+                    );
+                    offsetX *= Mathf.Max(0f, rangeOffsetMul);
+                    break;
+
+                case RangeScaleMode.Additive:
+                    size = new Vector2(
+                        Mathf.Max(0.01f, baseSize.x + rangeSizeAddX),
+                        Mathf.Max(0.01f, baseSize.y + rangeSizeAddY)
+                    );
+                    offsetX = Mathf.Max(0f, Mathf.Abs(baseOffset.x) + rangeOffsetAdd);
+                    break;
+
+                case RangeScaleMode.Level:
+                    size = new Vector2(
+                        Mathf.Max(0.01f, baseSize.x + rangeLevel * levelSizeStepX),
+                        Mathf.Max(0.01f, baseSize.y + rangeLevel * levelSizeStepY)
+                    );
+                    offsetX = Mathf.Max(0f, Mathf.Abs(baseOffset.x) + rangeLevel * levelOffsetStep);
+                    break;
+            }
+
+            if (forwardOnlyRangeScale)
+            {
+                // 크기 증가분의 절반만큼 앞쪽으로 더 밀어, 뒤쪽 경계 고정
+                float deltaX = size.x - baseSize.x; // >0: 커짐
+                if (deltaX > 0f) offsetX += 0.5f * deltaX;
+            }
+        }
+
+        outSize = size;
+        outOffsetX = offsetX;
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────────────────────
-
-    // 마우스 → 월드 → 플레이어 기준 방향(정규화)
     static Vector2 GetMouseAimDir(Camera cam, Transform player)
     {
         if (cam == null) cam = Camera.main;
@@ -211,13 +299,11 @@ public class AttackAbility : MonoBehaviour
 
         if (cam.orthographic)
         {
-            // 직교 카메라: XY 그대로, z만 플레이어 z에 맞춤
             mouseWorld = cam.ScreenToWorldPoint(mouseScreen);
             mouseWorld.z = player.position.z;
         }
         else
         {
-            // 원근 카메라: 카메라→플레이어 평면까지의 거리로 z 지정
             float zDist = Mathf.Abs(cam.transform.position.z - player.position.z);
             mouseScreen.z = zDist;
             mouseWorld = cam.ScreenToWorldPoint(mouseScreen);
@@ -228,22 +314,25 @@ public class AttackAbility : MonoBehaviour
         return dir.normalized;
     }
 
-    // 상위 체인 어딘가에 X 미러가 있으면 true
     static bool IsMirroredX(Transform t)
     {
         return t != null && t.lossyScale.x < 0f;
     }
 
 #if UNITY_EDITOR
-    // 예상 판정 프리뷰(선택 시) — 실제 로직과 동일한 보정 사용
     void OnDrawGizmosSelected()
     {
         if (!cfg) return;
 
-        Vector2 off = cfg.hitboxOffset;
-        Vector3 center;
-        Vector3 size = new Vector3(cfg.hitboxSize.x, cfg.hitboxSize.y, 0.01f);
+        Vector2 baseSize = cfg.hitboxSize;
+        Vector2 baseOffset = cfg.hitboxOffset;
 
+        // 계산 재사용
+        Vector2 size;
+        float offsetX;
+        ComputeRange(baseSize, baseOffset, out size, out offsetX);
+
+        // 방향
         Vector2 dir;
         if (aimMode == AttackAimMode.Mouse && (attackCamera != null || Camera.main != null))
         {
@@ -259,13 +348,15 @@ public class AttackAbility : MonoBehaviour
         if (IsMirroredX(hitbox != null ? hitbox.transform : transform))
             ang = 180f - ang;
 
-        Vector2 rotated = Quaternion.Euler(0, 0, ang) * new Vector2(Mathf.Abs(off.x), off.y);
-        center = transform.TransformPoint(rotated);
+        // 로컬 +X 기준 회전된 오프셋
+        Vector2 rotated = Quaternion.Euler(0, 0, ang) * new Vector2(offsetX, baseOffset.y);
+        Vector3 center = transform.TransformPoint(rotated);
+        Vector3 gsize = new Vector3(size.x, size.y, 0.01f);
 
         Color fill = new Color(1f, 0.5f, 0f, 0.08f);
         Color line = new Color(1f, 0.5f, 0f, 0.9f);
-        Gizmos.color = fill; Gizmos.DrawCube(center, size);
-        Gizmos.color = line; Gizmos.DrawWireCube(center, size);
+        Gizmos.color = fill; Gizmos.DrawCube(center, gsize);
+        Gizmos.color = line; Gizmos.DrawWireCube(center, gsize);
     }
 #endif
 }
