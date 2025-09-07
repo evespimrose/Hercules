@@ -143,3 +143,92 @@ public class AttackAction : BTNode
         return State.Running;
     }
 }
+
+[System.Serializable]
+public class WanderAction : BTNode
+{
+    private Transform self;
+    private AIBlackboard bb;
+    private MonsterController monsterController;
+
+    private float minStep = 0.05f;
+    private bool wasWandering = false;
+    private enum Phase { Outbound, Return }
+    private Phase phase = Phase.Outbound;
+
+    public WanderAction(Transform self, AIBlackboard bb)
+    {
+        this.self = self;
+        this.bb = bb;
+        if (self != null) monsterController = self.GetComponent<MonsterController>();
+    }
+
+    private void EnsureAnchor(bool firstEnter)
+    {
+        // 다른 상태에서 wander로 전환 시 현재 위치를 앵커로
+        if (firstEnter)
+            bb.wanderAnchor = self.position;
+        // MaxRange가 0이면 기본값
+        if (bb.wanderMaxRange <= 0f)
+            bb.wanderMaxRange = 1.5f;
+    }
+
+    private Vector2 PickNextDestination()
+    {
+        float radius = Random.Range(minStep, bb.wanderMaxRange);
+        float angle = Random.Range(0f, Mathf.PI * 2f);
+        Vector2 offset = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+        return bb.wanderAnchor + offset;
+    }
+
+    public override State Tick()
+    {
+        if (self == null || bb == null) return State.Failure;
+
+        bool firstEnter = !wasWandering;
+        EnsureAnchor(firstEnter);
+
+        // Wander 활성화 표시
+        bb.moveWander = true;
+        wasWandering = true;
+
+        // 중력 on
+        if (monsterController != null)
+            monsterController.SetGravityEnabled(true);
+
+        // 목적지 도달 로직과 왕복
+        float sqrDistToDest = (bb.wanderDestination - (Vector2)self.position).sqrMagnitude;
+        bool noDest = bb.wanderDestination == default(Vector2);
+        bool arrived = sqrDistToDest < 0.01f;
+        if (noDest || arrived)
+        {
+            if (phase == Phase.Outbound)
+            {
+                if (noDest || firstEnter)
+                {
+                    bb.wanderDestination = PickNextDestination();
+                }
+                else
+                {
+                    // 목적지에 도달했으면 앵커로 복귀
+                    bb.wanderDestination = bb.wanderAnchor;
+                    phase = Phase.Return;
+                }
+            }
+            else // Return -> 다음 Outbound 목적지 생성
+            {
+                bb.wanderDestination = PickNextDestination();
+                phase = Phase.Outbound;
+            }
+        }
+
+        // 목적지로 이동(속도는 moveSpeed 사용)
+        if (monsterController != null)
+        {
+            monsterController.MoveTowardsPoint(bb.wanderDestination, monsterController.moveSpeed);
+        }
+
+        return State.Running;
+    }
+}
+

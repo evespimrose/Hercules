@@ -34,13 +34,18 @@ public class MonsterBT : MonoBehaviour
         // 회피와 추적도 병렬로 실행하여 더 자연스러운 행동 구현
         var moveEvadeNode = new MoveEvadeAction(selfTransform, bb, 4f);
         var moveChaseNode = new MoveChaseAction(selfTransform, bb, 3f);
+        var wanderNode = new WanderAction(selfTransform, bb);
         // 공격 서브트리
         var attackNode = new AttackAction(selfTransform, bb, 2.2f, 1f);  // 1.5f에서 2.2f로 증가
 
         // 루트 트리: 이동(회피+추적)과 공격을 병렬로 실행
         // [수정] Any 정책 사용: 이동과 공격 중 하나라도 성공하면 성공으로 처리
         //root = new Parallel(new List<BTNode> { moveEvadeNode, moveChaseNode, attackNode });
-        root = new Parallel(new List<BTNode> { moveChaseNode, attackNode }, Parallel.Policy.Any);
+        // 추적/공격이 아니면 Wander가 실행되도록 셀렉터 구성
+        root = new Selector(new List<BTNode>{
+            new Parallel(new List<BTNode>{ moveChaseNode, attackNode }, Parallel.Policy.Any),
+            wanderNode
+        });
 
 
         // Debug.Log($"[{name}] BT 구조 생성 완료 - 회피/추적/공격 병렬 실행");

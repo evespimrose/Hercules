@@ -39,6 +39,7 @@ public class MonsterController : MonoBehaviour
 
     private bool isChasing = false;
     private bool isEvading = false;
+    private bool isWandering = false;
     private bool canAttack = false;
 
     void Start()
@@ -90,12 +91,51 @@ public class MonsterController : MonoBehaviour
     {
         if (monsterBT == null || monsterBT.bb == null) return;
         var bb = monsterBT.bb;
-
-        if (isChasing != bb.moveChase) isChasing = bb.moveChase;
-        if (isEvading != bb.moveEvade) isEvading = bb.moveEvade;
-        if (canAttack != bb.attack) canAttack = bb.attack;
-
-        if (bb.target != target) target = bb.target;
+        
+        // 상태 변경 감지 및 로그 출력
+        if (isChasing != bb.moveChase)
+        {
+            isChasing = bb.moveChase;
+            //if (isChasing)
+            //    Debug.Log($"[{name}] BT 상태 전환: 추적 모드 시작");
+            //else
+            //    Debug.Log($"[{name}] BT 상태 전환: 추적 모드 종료");
+        }
+        
+        if (isEvading != bb.moveEvade)
+        {
+            isEvading = bb.moveEvade;
+            //if (isEvading)
+            //    Debug.Log($"[{name}] BT 상태 전환: 회피 모드 시작");
+            //else
+            //    Debug.Log($"[{name}] BT 상태 전환: 회피 모드 종료");
+        }
+        if (isWandering != bb.moveWander)
+        {
+            // 다른 상태 -> Wander 전환 시 현재 위치를 앵커로 지정
+            if (!isWandering && bb.moveWander)
+            {
+                bb.wanderAnchor = transform.position;
+            }
+            isWandering = bb.moveWander;
+        }
+        
+        if (canAttack != bb.attack)
+        {
+            canAttack = bb.attack;
+            //if (canAttack)
+            //    Debug.Log($"[{name}] BT 상태 전환: 공격 가능 상태");
+            //else
+            //    Debug.Log($"[{name}] BT 상태 전환: 공격 불가 상태");
+            }
+        
+        // 타겟이 변경되었는지 확인
+        if (bb.target != target)
+        {
+            target = bb.target;
+            //if (target != null)
+            //    Debug.Log($"[{name}] BT 타겟 변경: {target.name}");
+        }
     }
 
     void ExecuteActions()
@@ -112,6 +152,47 @@ public class MonsterController : MonoBehaviour
             float elapsed = Time.time - lastAttackTime;
             if (elapsed >= attackCooldown) Attack();
         }
+        else if (isEvading)
+        {
+            MoveAwayFromTarget(evadeSpeed);
+        }
+        else if (isWandering)
+        {
+            // WanderAction이 목적지 계산 및 호출, 여기서는 중력만 on 유지
+            SetGravityEnabled(true);
+        }
+        else
+        {
+            // 정지
+            StopMovement();
+        }
+        
+        // 공격 처리 - 디버그 로그 추가
+        if (canAttack)
+        {
+            float timeSinceLastAttack = Time.time - lastAttackTime;
+            if (timeSinceLastAttack >= attackCooldown)
+            {
+                //Debug.Log($"[{name}] 공격 조건 만족: canAttack={canAttack}, 쿨다운={timeSinceLastAttack:F2}/{attackCooldown}");
+                Attack();
+            }
+            else
+            {
+                // 쿨다운 중일 때 로그 (너무 자주 출력되지 않도록)
+                //if (Time.frameCount % 120 == 0) // 120프레임마다 한 번씩
+                //{
+                //    Debug.Log($"[{name}] 공격 대기 중: 쿨다운 {timeSinceLastAttack:F2}/{attackCooldown}");
+                //}
+            }
+        }
+        //else
+        //{
+        //    // 공격 불가 상태일 때 로그 (너무 자주 출력되지 않도록)
+        //    if (Time.frameCount % 120 == 0) // 120프레임마다 한 번씩
+        //    {
+        //        Debug.Log($"[{name}] 공격 불가: canAttack={canAttack}");
+        //    }
+        //}
     }
 
     void MoveTowardsTarget(float speed)
@@ -131,6 +212,21 @@ public class MonsterController : MonoBehaviour
         rb.velocity = Vector2.zero;
     }
 
+    // Wander/물리 기반 이동을 위한 유틸
+    public void SetGravityEnabled(bool enabled)
+    {
+        if (rb != null)
+        {
+            rb.gravityScale = enabled ? 1f : 0f;
+        }
+    }
+
+    public void MoveTowardsPoint(Vector2 point, float speed)
+    {
+        Vector2 direction = ((Vector2)point - (Vector2)transform.position).normalized;
+        rb.velocity = direction * speed;
+    }
+    
     void Attack()
     {
         if (target == null) return;
