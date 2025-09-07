@@ -33,6 +33,7 @@ public class SlotUI : MonoBehaviour, IPointerClickHandler
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        //ContainerUI.OnSlotClicked(container, index, this); // 중앙 UI 매니저 호출
+        // 중앙 UI 매니저 호출
+        //ContainerUI.OnSlotClicked(container, index, this); 
     }
 }
