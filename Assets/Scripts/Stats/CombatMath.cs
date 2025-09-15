@@ -8,6 +8,7 @@ namespace Hercules.StatsSystem
     ///           * (공격측 DamageMultiplier)
     ///           * (크리티컬이면 CritDamageMultiplier)
     ///           * (피격측 IncomingDamageMultiplier)
+    ///           → (방어력 합연산) damage - defense (하한 0)
     ///
     /// 주의:
     ///  - AttackAbility 쪽에서 이미 공격 배수를 미리 곱해 Hitbox로 넘기고 있다면
@@ -55,6 +56,9 @@ namespace Hercules.StatsSystem
                 catch { /* 무시 */ }
             }
 
+            // 방어력(합연산) 적용
+            dmg = ApplyDefenseReduction(dmg, defender);
+
             if (!float.IsFinite(dmg)) return 0f;
             return Mathf.Max(0f, dmg);
         }
@@ -95,6 +99,9 @@ namespace Hercules.StatsSystem
                 dmg *= incomingMul;
             }
 
+            // 방어력(합연산) 적용
+            dmg = ApplyDefenseReduction(dmg, defender);
+
             if (!float.IsFinite(dmg)) return 0f;
             return Mathf.Max(0f, dmg);
         }
@@ -107,6 +114,19 @@ namespace Hercules.StatsSystem
             return Mathf.Max(min, v.Value);
         }
 
+        /// <summary>
+        /// 방어력 적용 단계 (확장 포인트)
+        /// - 현재 공식: 최종 단계에서 damage - defense (하한 0)
+        /// - 훗날 관통/소프트캡/비선형 등은 이 함수만 수정하여 전역 반영
+        /// </summary>
+        public static float ApplyDefenseReduction(float damageAfterMultipliers, StatsBase defender)
+        {
+            if (defender == null) return Mathf.Max(0f, damageAfterMultipliers);
+            float defense = 0f;
+            try { defense = defender.Defense.Value; } catch { defense = 0f; }
+            float reduced = damageAfterMultipliers - defense;
+            return Mathf.Max(0f, reduced);
+        }
 
         public static float ComputeDamage(StatsBase attacker, StatsBase defender, float baseDamage, out bool isCrit)
         {
@@ -142,6 +162,9 @@ namespace Hercules.StatsSystem
                 float incomingMul = Mathf.Max(0f, defender.IncomingDamageMultiplier.Value);
                 dmg *= incomingMul;
             }
+
+            // 방어력(합연산) 적용
+            dmg = ApplyDefenseReduction(dmg, defender);
 
             if (!float.IsFinite(dmg)) return 0f;
             return Mathf.Max(0f, dmg);

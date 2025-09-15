@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,29 +12,40 @@ namespace Hercules.StatsSystem
     {
         // ===== 리소스(현재값을 갖는 자원형) =====
         [Header("Resources")]
-        [SerializeField] private float currentHealth = 100f;
+        [SerializeField] private float currentHealth = 100f;                            // 현재 체력
 
         // ===== 기본 스탯 =====
         [Header("Primary")]
-        public StatValue MaxHealth = new StatValue { Base = 100f };
-        public StatValue MoveSpeed = new StatValue { Base = 1f }; // 배수/스케일
-        public StatValue AttackSpeed = new StatValue { Base = 1f }; // 배수/스케일
-        public StatValue MaxJumpHeight = new StatValue { Base = 1f };
+        public StatValue MaxHealth = new StatValue { Base = 100f };                     // 최대 체력
+        public StatValue MoveSpeed = new StatValue { Base = 1f };                       // 이속
+        public StatValue AttackSpeed = new StatValue { Base = 1f };                     // 공속
+        public StatValue MaxJumpHeight = new StatValue { Base = 1f };                   // 점프높이
 
         [Header("Combat (used by future CombatMath)")]
-        public StatValue DamageMultiplier = new StatValue { Base = 1f };   // 가하는 최종 피해 승수
-        public StatValue IncomingDamageMultiplier = new StatValue { Base = 1f };   // 받는 최종 피해 승수(>1=더 아픔, <1=저항)
-        public StatValue CritChance = new StatValue { Base = 0f };   // 0~1
-        public StatValue CritDamageMultiplier = new StatValue { Base = 1.5f }; // 1.5 = 150%
+        public StatValue DamageMultiplier = new StatValue { Base = 1f };                // 가하는 최종 피해 승수
+        public StatValue IncomingDamageMultiplier = new StatValue { Base = 1f };        // 받는 최종 피해 승수(>1=더 아픔, <1=저항)
+        public StatValue CritChance = new StatValue { Base = 0f };                      // 치명타 확률 // 0~1
+        public StatValue CritDamageMultiplier = new StatValue { Base = 1.5f };          // 치명타 데미지 // 1.5 = 150%
+
+        [Header("Combat (Flat)")]
+        public StatValue Defense = new StatValue { Base = 0f };                         // 방어력 // 합연산 방어력(최종 데미지에서 -Defense)
 
         // ===== 모듈(선택) =====
         protected readonly List<IStatsModule> modules = new List<IStatsModule>();
 
         // ===== 리소스 프로퍼티 =====
+        public event Action<float, float> OnHealthChanged;
+
         public float CurrentHealth
         {
             get => currentHealth;
-            set => currentHealth = Mathf.Clamp(value, 0f, MaxHealth.Value);
+            set
+            {
+                float old = currentHealth;
+                currentHealth = Mathf.Clamp(value, 0f, MaxHealth.Value);
+                if (!Mathf.Approximately(old, currentHealth))
+                    OnHealthChanged?.Invoke(old, currentHealth);
+            }
         }
 
         protected virtual void Awake()
@@ -43,7 +55,8 @@ namespace Hercules.StatsSystem
                 MoveSpeed, AttackSpeed, MaxJumpHeight,
                 MaxHealth,
                 DamageMultiplier, IncomingDamageMultiplier,
-                CritChance, CritDamageMultiplier
+                CritChance, CritDamageMultiplier,
+                Defense
             );
         }
 
@@ -71,7 +84,8 @@ namespace Hercules.StatsSystem
         // 공통 파생 계산(필요 시 override)
         public virtual void RecomputeDerived()
         {
-            // 기본 구현은 없음. 파생에서 추가 가능.
+            // MaxHealth 변동 시 현재 체력 클램프
+            CurrentHealth = Mathf.Clamp(CurrentHealth, 0f, MaxHealth.Value);
         }
 
         protected virtual void OnStatChanged()
