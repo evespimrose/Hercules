@@ -976,8 +976,12 @@ MonoBehaviour:
   bb:
     moveChase: 0
     moveEvade: 0
+    moveWander: 0
     attack: 0
     target: {fileID: 0}
+    wanderAnchor: {x: 0, y: 0}
+    wanderMaxRange: 1.5
+    wanderDestination: {x: 0, y: 0}
   monsterController: {fileID: 0}
 --- !u!114 &1542632299
 MonoBehaviour:
@@ -1015,6 +1019,9 @@ MonoBehaviour:
     mods: []
   CritDamageMultiplier:
     base: 2
+    mods: []
+  Defense:
+    base: 0
     mods: []
   AggroRange:
     base: 6
@@ -1637,7 +1644,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cfg: {fileID: 0}
   hitbox: {fileID: 2095118199}
-  aimMode: 0
+  aimMode: 1
   attackCamera: {fileID: 0}
   overrideOnHitOptions: 1
   onHitBleeding: 1
@@ -1762,6 +1769,9 @@ MonoBehaviour:
     mods: []
   CritDamageMultiplier:
     base: 1.5
+    mods: []
+  Defense:
+    base: 0
     mods: []
   IFrameMultiplier:
     base: 1
